@@ -1,18 +1,31 @@
 'use client';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCanvasSequence } from '@/hooks/use-canvas-sequence';
+
 import {
     DeviceBreakpoint,
-    useCanvasSequence,
-} from '@/hooks/use-canvas-sequence';
+    getStoragePublicUrl,
+    StorageFolder,
+} from '@/lib/supabase-paths';
 
-const getFrameUrl = (index: number, breakpoint: DeviceBreakpoint) => {
-    const paddedIndex = String(index + 1).padStart(3, '0');
-    return `/sequence/${breakpoint}/${paddedIndex}.webp`;
-};
+interface ProductSequenceProps {
+    folderName: StorageFolder;
+    frameCount: number;
+}
 
-export const ProductSequence = () => {
-    const frameCount = 174; // точное количество кадров
+export const ProductSequence = ({
+    folderName,
+    frameCount,
+}: ProductSequenceProps) => {
+    // Декларативный маппинг индексов в официальные URL Supabase
+    const getFrameUrl = (index: number, breakpoint: DeviceBreakpoint) => {
+        const paddedIndex = String(index + 1).padStart(3, '0');
+        const fileName = `${paddedIndex}.webp`;
+
+        //
+        return getStoragePublicUrl(folderName, breakpoint, fileName);
+    };
 
     const { canvasRef, trackRef, isLoaded } = useCanvasSequence({
         frameCount,
