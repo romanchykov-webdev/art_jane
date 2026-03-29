@@ -2,12 +2,12 @@
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCanvasSequence } from '@/hooks/use-canvas-sequence';
-
 import {
     DeviceBreakpoint,
     getStoragePublicUrl,
     StorageFolder,
 } from '@/lib/supabase-paths';
+import { useCallback } from 'react';
 
 interface ProductSequenceProps {
     folderName: StorageFolder;
@@ -18,14 +18,15 @@ export const ProductSequence = ({
     folderName,
     frameCount,
 }: ProductSequenceProps) => {
-    // Декларативный маппинг индексов в официальные URL Supabase
-    const getFrameUrl = (index: number, breakpoint: DeviceBreakpoint) => {
-        const paddedIndex = String(index + 1).padStart(3, '0');
-        const fileName = `${paddedIndex}.webp`;
+    const getFrameUrl = useCallback(
+        (index: number, breakpoint: DeviceBreakpoint) => {
+            const paddedIndex = String(index + 1).padStart(3, '0');
+            const fileName = `${paddedIndex}.webp`;
 
-        //
-        return getStoragePublicUrl(folderName, breakpoint, fileName);
-    };
+            return getStoragePublicUrl(folderName, breakpoint, fileName);
+        },
+        [folderName]
+    );
 
     const { canvasRef, trackRef, isLoaded } = useCanvasSequence({
         frameCount,

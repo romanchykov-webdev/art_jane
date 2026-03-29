@@ -1,4 +1,4 @@
-import { ProductSequence } from '@/components/sharred/canvas/product-sequence';
+import { ProductSequence } from '@/components/shared/canvas/product-sequence';
 
 export default function Home() {
     return (
