@@ -1,0 +1,452 @@
+# Gemma Pizza Project - Cursor Rules
+
+## 🎯 Stack & Technologies
+
+- **Framework:** Next.js 15 (App Router)
+- **ORM:** Prisma
+- **Database:** Supabase PostgreSQL
+- **Language:** TypeScript
+- **State Management:** Zustand
+- **Styling:** TailwindCSS
+- **Auth:** NextAuth.js
+- **Payment:** Stripe
+
+---
+
+## 🗄️ Database Configuration (Supabase)
+
+### Connection Strings
+
+```
+# API Routes - use Pooler (Transaction mode)
+DATABASE_URL="postgresql://[user]:[password]@[host]:6543/postgres?pgbouncer=true"
+
+# Migrations - use Direct connection
+DIRECT_URL="postgresql://[user]:[password]@[host]:5432/postgres"
+```
+
+### Connection Best Practices
+
+- ✅ Always use Pooler (pgbouncer=true) for API routes
+- ✅ Use Direct URL only for Prisma migrations
+- ✅ Set connection_limit=10 in production
+- ✅ Set pool_timeout=30
+- ✅ Close connections properly
+- ❌ Never use Direct connection in API routes (exhausts connection pool)
+
+### Performance Settings
+
+```typescript
+// prisma/schema.prisma
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")      // Pooler for queries
+  directUrl         = env("DIRECT_URL")        // Direct for migrations
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+```
+
+---
+
+## ⚡ Performance Best Practices
+
+### 1. Prisma Query Optimization
+
+#### ✅ ALWAYS use `select` instead of `include`:
+
+```typescript
+// ❌ BAD - loads all fields
+const product = await prisma.product.findFirst({
+  include: { ingredients: true },
+});
+
+// ✅ GOOD - loads only needed fields
+const product = await prisma.product.findFirst({
+  select: {
+    id: true,
+    name: true,
+    imageUrl: true,
+    ingredients: {
+      select: { id: true, name: true, price: true },
+    },
+  },
+});
+```
+
+#### ✅ Use React.cache() for Server Components:
+
+```typescript
+import { cache } from 'react';
+
+export const findPizzas = cache(async (params) => {
+  return await prisma.category.findMany({...});
+});
+```
+
+#### ✅ Avoid N+1 queries:
+
+```typescript
+// ❌ BAD - N+1 problem
+for (const item of items) {
+  const product = await prisma.product.findUnique({ where: { id: item.productId } });
+}
+
+// ✅ GOOD - single query with include/select
+const items = await prisma.cartItem.findMany({
+  select: {
+    id: true,
+    productItem: {
+      select: { product: { select: { name: true } } },
+    },
+  },
+});
+```
+
+### 2. Database Indexes
+
+#### Always index frequently queried fields:
+
+```sql
+-- Already created
+CREATE INDEX "Cart_tokenId_idx" ON "Cart"("tokenId");
+CREATE INDEX "CartItem_cartId_idx" ON "CartItem"("cartId");
+CREATE INDEX "CartItem_productItemId_idx" ON "CartItem"("productItemId");
+CREATE INDEX "CartItem_compositionKey_idx" ON "CartItem"("compositionKey");
+CREATE INDEX "Product_categoryId_idx" ON "Product"("categoryId");
+
+-- Composite indexes for complex queries
+CREATE INDEX "CartItem_cartId_productItemId_idx" ON "CartItem"("cartId", "productItemId");
+```
+
+### 3. API Route Caching
+
+#### Add revalidate to API routes:
+
+```typescript
+// For rarely changing data (ingredients, categories)
+export const revalidate = 3600; // 1 hour
+
+// For frequently changing data (stories)
+export const revalidate = 1800; // 30 minutes
+
+// For user-specific data (cart)
+export const revalidate = 5; // 5 seconds
+```
+
+#### In-memory cache for static data:
+
+```typescript
+let cachedData: any[] | null = null;
+let cacheTime = 0;
+const CACHE_TTL = 3600 * 1000; // 1 hour
+
+export async function GET() {
+  const now = Date.now();
+
+  if (cachedData && (now - cacheTime) < CACHE_TTL) {
+    return NextResponse.json(cachedData);
+  }
+
+  cachedData = await prisma.ingredient.findMany({...});
+  cacheTime = now;
+
+  return NextResponse.json(cachedData);
+}
+```
+
+### 4. Server Components Optimization
+
+#### Use revalidate for page caching:
+
+```typescript
+// app/page.tsx
+export const revalidate = 60; // cache for 60 seconds
+
+export default async function Home() {
+  const data = await findPizzas();
+  return <div>{/* ... */}</div>;
+}
+```
+
+---
+
+## 🛒 Cart Optimization Patterns
+
+### Heavy Queries - Use Raw SQL with optimization:
+
+```typescript
+// For complex aggregations, raw SQL is faster than Prisma
+const result = await prisma.$queryRawUnsafe<any[]>(
+  `
+  SELECT 
+    c.id, c."totalAmount",
+    json_agg(ci.*) as items
+  FROM "Cart" c
+  LEFT JOIN "CartItem" ci ON ci."cartId" = c.id
+  WHERE c."tokenId" = $1
+  GROUP BY c.id
+`,
+  token,
+);
+```
+
+### Transactions for data consistency:
+
+```typescript
+await prisma.$transaction(async (tx) => {
+  await tx.cartItem.upsert({...});
+  await tx.$executeRaw`UPDATE "Cart" SET "totalAmount" = ...`;
+});
+```
+
+---
+
+## 🔐 Security Best Practices
+
+### 1. Never expose sensitive data:
+
+```typescript
+// ❌ BAD
+const user = await prisma.user.findUnique({
+  where: { id },
+});
+return user; // exposes password hash!
+
+// ✅ GOOD
+const user = await prisma.user.findUnique({
+  where: { id },
+  select: { id: true, email: true, fullName: true },
+});
+```
+
+### 2. Validate user input:
+
+```typescript
+// Always validate and sanitize
+const productId = Number(params.id);
+if (!productId || productId < 0) {
+  return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+}
+```
+
+---
+
+## 🎨 Code Style
+
+### TypeScript
+
+- Use strict mode
+- Define explicit types for API responses
+- Use Prisma-generated types
+- Avoid `any` type
+
+### Naming Conventions
+
+- Files: kebab-case (`cart-button.tsx`)
+- Components: PascalCase (`CartButton`)
+- Functions: camelCase (`findOrCreateCart`)
+- Constants: UPPER_SNAKE_CASE (`DEFAULT_MAX_PRICE`)
+
+### Comments (Russian language)
+
+```typescript
+// ✅ Получение корзины пользователя
+// ⚡ Оптимизация: используем select вместо include
+// 🔥 Критично: проверяем наличие токена
+```
+
+---
+
+## 🐛 Error Handling
+
+### API Routes:
+
+```typescript
+export async function GET(req: NextRequest) {
+  try {
+    // your code
+  } catch (error) {
+    console.error('[API_NAME] Error:', error);
+    return NextResponse.json({ message: 'Error message' }, { status: 500 });
+  }
+}
+```
+
+### Server Actions:
+
+```typescript
+'use server';
+
+export async function createOrder(data: FormData) {
+  try {
+    // your code
+    return { success: true };
+  } catch (error) {
+    console.error('[CREATE_ORDER] Error:', error);
+    return { success: false, error: error.message };
+  }
+}
+```
+
+---
+
+## 📚 Useful Links
+
+### Supabase
+
+- Dashboard: https://supabase.com/dashboard
+- Database: https://supabase.com/docs/guides/database
+- Performance: https://supabase.com/docs/guides/platform/performance
+- Prisma Integration: https://supabase.com/docs/guides/database/prisma
+- Connection Pooling: https://supabase.com/docs/guides/database/postgres/connection-pooling
+
+### Prisma
+
+- Best Practices: https://www.prisma.io/docs/guides/performance-and-optimization
+- Supabase Guide: https://www.prisma.io/docs/orm/overview/databases/supabase
+- Query Optimization: https://www.prisma.io/docs/guides/performance-and-optimization/query-optimization-performance
+
+### Next.js 15
+
+- App Router: https://nextjs.org/docs/app
+- Server Components: https://nextjs.org/docs/app/building-your-application/rendering/server-components
+- Caching: https://nextjs.org/docs/app/building-your-application/caching
+
+---
+
+## 🔍 Monitoring & Debugging
+
+### Check slow queries in Supabase:
+
+1. Open Supabase Dashboard
+2. Go to Database → Query Performance
+3. Look for queries > 1000ms
+4. Add indexes or optimize
+
+### Prisma Debug Mode:
+
+```bash
+# .env
+DEBUG="prisma:query"
+```
+
+### Monitor API response times:
+
+```typescript
+console.time('API_CART');
+const result = await prisma.cart.findFirst({...});
+console.timeEnd('API_CART');
+```
+
+---
+
+## ✅ Pre-commit Checklist
+
+Before committing code:
+
+- [ ] Used `select` instead of `include` where possible
+- [ ] Added `revalidate` to API routes
+- [ ] Checked for N+1 queries
+- [ ] Added proper error handling
+- [ ] Removed console.logs
+- [ ] Types are explicit (no `any`)
+- [ ] Comments in Russian for important logic
+
+---
+
+## 🚀 Deployment
+
+### Environment Variables Required:
+
+```bash
+DATABASE_URL=          # Supabase Pooler URL
+DIRECT_URL=           # Supabase Direct URL
+SHADOW_DATABASE_URL=  # For migrations
+NEXTAUTH_SECRET=
+NEXTAUTH_URL=
+STRIPE_SECRET_KEY=
+```
+
+### Build optimizations:
+
+```json
+// package.json
+{
+  "scripts": {
+    "build": "prisma generate && next build",
+    "postinstall": "prisma generate"
+  }
+}
+```
+
+---
+
+## 💡 Current Performance Metrics
+
+**Target response times:**
+
+- GET /api/cart: < 500ms
+- GET /api/ingredients: < 300ms (with cache: 50-100ms)
+- GET /api/stories: < 500ms
+- GET /: < 2000ms (SSR)
+- GET /product/[id]: < 800ms
+
+**If slower - optimize!**
+
+---
+
+## 🎯 Project-Specific Patterns
+
+### Cart Operations:
+
+- Use transactions for consistency
+- Update totalAmount with optimized SQL
+- Use compositionKey for deduplication
+
+### Product Filtering:
+
+- Cache findPizzas() with React.cache()
+- Use select for minimal data transfer
+- Filter on database level, not in JavaScript
+
+### Authentication:
+
+- NextAuth with Prisma adapter
+- Store only necessary user data
+- Use session for user identification
+
+---
+
+_Last updated: October 2025_
+_Project: Gemma Pizza - Next.js 15 + Supabase + Prisma_
+
+## Git Commit Messages
+
+Когда тебя просят сгенерировать сообщение коммита (commit message):
+
+1.  **Всегда пиши на русском языке.**
+2.  Используй формат [Conventional Commits](https://www.conventionalcommits.org/ru/v1.0.0/):
+    - `feat:` для новых функций
+    - `fix:` для исправления ошибок
+    - `docs:` для документации
+    - `style:` для форматирования
+    - `refactor:` для рефакторинга кода
+    - `test:` для тестов
+    - `chore:` для рутинных задач
+3.  **Структура сообщения:**
+    - **Заголовок**: краткое описание изменений (до 50 символов) в повелительном наклонении (например, "Добавь", "Исправь", а не "Добавил").
+    - **Пустая строка**
+    - **Подробное описание**:
+      - Объясни _почему_ сделаны изменения.
+      - Перечисли конкретные изменения в файлах.
+      - Используй маркированные списки (- ) для деталей.
+      - Упомяни, какие файлы были затронуты, если это важно.
+
+## Пример
+
+feat: добавь авторизацию через Google
