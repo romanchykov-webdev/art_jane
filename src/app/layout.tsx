@@ -1,8 +1,15 @@
 import type { Metadata } from 'next';
-import { Figtree } from 'next/font/google';
+
 import './globals.css';
 
-const figtree = Figtree({ subsets: ['latin'], variable: '--font-figtree' });
+// fonts
+import { janeFont } from '@/lib/fonts';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({
+    subsets: ['latin', 'cyrillic'],
+    variable: '--font-inter',
+});
 
 export const metadata: Metadata = {
     title: 'Jane Art | Кастомная одежда',
@@ -17,7 +24,7 @@ export default function RootLayout({
     return (
         <html lang="ru" className="scroll-smooth">
             <body
-                className={`${figtree.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col`}
+                className={`${inter.variable} ${janeFont.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col`}
             >
                 {/* Header (Navbar) */}
                 <main className="flex-grow flex flex-col">{children}</main>
