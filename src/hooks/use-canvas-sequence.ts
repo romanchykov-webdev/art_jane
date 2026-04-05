@@ -23,6 +23,7 @@ export const useCanvasSequence = ({
 
     const isLoadedRef = useRef(false);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState(0);
     const [currentBreakpoint, setCurrentBreakpoint] =
         useState<DeviceBreakpoint>('desktop');
 
@@ -45,6 +46,7 @@ export const useCanvasSequence = ({
         const actualBreakpoint = getDeviceBreakpoint(window.innerWidth);
 
         const loadingImages: HTMLImageElement[] = [];
+        let loadedCount = 0;
 
         const preloadImages = async () => {
             if (frameCount === 0) {
@@ -53,6 +55,13 @@ export const useCanvasSequence = ({
                 );
                 return;
             }
+
+            const updateProgress = () => {
+                loadedCount++;
+                setLoadingProgress(
+                    Math.round((loadedCount / frameCount) * 100)
+                );
+            };
 
             const promises = Array.from({ length: frameCount }).map(
                 (_, index) => {
@@ -66,12 +75,14 @@ export const useCanvasSequence = ({
                         loadingImages.push(img);
 
                         img.onload = () => {
+                            updateProgress();
                             img.onload = null;
                             img.onerror = null;
                             resolve(img);
                         };
 
                         img.onerror = () => {
+                            updateProgress(); // Считаем ошибку как прогресс, чтобы лоадер не завис
                             img.onload = null;
                             img.onerror = null;
                             img.src = '';
@@ -121,6 +132,7 @@ export const useCanvasSequence = ({
             imagesRef.current = [];
             isLoadedRef.current = false;
             setIsLoaded(false);
+            setLoadingProgress(0); // Сбрасываем прогресс при размонтировании
         };
     }, [frameCount, getFrameUrl]);
 
@@ -158,7 +170,7 @@ export const useCanvasSequence = ({
 
     // 3. ВЫСОКОПРОИЗВОДИТЕЛЬНАЯ СИНХРОНИЗАЦИЯ СО СКРОЛЛОМ
     const handleScroll = useCallback(() => {
-        // Читаем из Ref,
+        // Читаем из Ref
         if (!isLoadedRef.current || imagesRef.current.length === 0) return;
 
         const { offsetTop, height } = geometryRef.current;
@@ -222,6 +234,7 @@ export const useCanvasSequence = ({
         canvasRef,
         trackRef,
         isLoaded,
+        loadingProgress,
         currentBreakpoint,
     };
 };
