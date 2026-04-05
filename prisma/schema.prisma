@@ -1,13 +1,85 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma" 
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// 1. СТРОГИЕ СТАТУСЫ ТОВАРА
+enum ProductStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+// 2. СТАТУСЫ ЗАКАЗА
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  CANCELLED
+}
+
+// 3. МОДЕЛЬ ТОВАРА (Искусство 1-of-1)
+model Product {
+  id                 String        @id @default(uuid())
+  title              String
+  slug               String        @unique
+  description        String        @db.Text
+  price              Int           // В копейках (1500000 = 15,000.00)
+  
+  status             ProductStatus @default(AVAILABLE)
+
+  // ПРЕВЬЮ (Легкие изображения для списка товаров)
+  thumbnailFront     String
+  thumbnailBack      String
+
+  // ГАЛЕРЕЯ (Массив тяжелых фото для страницы товара)
+  gallery            String[]
+
+  // ХАРАКТЕРИСТИКИ
+  size               String
+  materials          String?
+  
+  // МЕТАДАННЫЕ ДЛЯ CANVAS ДВИЖКА
+  sequenceFolder     String        
+  sequenceFrameCount Int           @default(174)
+
+  // АНАЛИТИКА / ИЗБРАННОЕ
+  favoriteCount      Int           @default(0)
+
+  // СВЯЗИ
+  orderId            String?
+  order              Order?        @relation(fields: [orderId], references: [id])
+
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([status])
+  @@index([slug])
+}
+
+// 4. МОДЕЛЬ ЗАКАЗА
+model Order {
+  id               String      @id @default(uuid())
+  status           OrderStatus @default(PENDING)
+  
+  customerEmail    String?
+  customerName     String?
+  customerAddress  Json?       
+  
+  stripeSessionId  String?     @unique
+  
+  items            Product[]
+
+  expiresAt        DateTime?   // Для очистки брони через 15 минут
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([stripeSessionId])
 }
