@@ -31,7 +31,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
     };
 
     return (
-        <Card className="group overflow-hidden border-none bg-transparent transition-all duration-500 flex flex-col">
+        <Card className="group  border-none bg-transparent transition-all duration-500 flex flex-col  py-0 shadow-lg shadow-black/30  hover:shadow-xl">
             <Link
                 href={`/product/${product.slug}`}
                 className="relative block aspect-[3/4] overflow-hidden rounded-xl bg-muted"

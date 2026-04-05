@@ -1,30 +1,47 @@
+// src/app/page.tsx
 import { ProductSequence } from '@/components/shared/canvas/product-sequence';
-import { ProductCard } from '@/components/shared/shop/product-card';
+import { CategorySection } from '@/components/shared/shop/category-section';
 import { prisma } from '@/lib/prisma';
-import Link from 'next/link';
 
-// force-dynamic обязателен: статусы 1-of-1 изделий меняются моментально
-// ISR дал бы stale "AVAILABLE" для уже проданного уникального экземпляра
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-    const products = await prisma.product.findMany({
-        where: { status: 'AVAILABLE' }, // показываем только доступные на главной
-        orderBy: { createdAt: 'desc' },
-        take: 3,
+    // 1. Тянем категории, счетчик и первые 4 товара
+    const categoriesWithProducts = await prisma.category.findMany({
+        where: {
+            products: {
+                some: { status: 'AVAILABLE' }, // Берем ТОЛЬКО категории, где есть доступные товары
+            },
+        },
+        orderBy: { name: 'asc' },
         select: {
             id: true,
-            title: true,
+            name: true,
             slug: true,
-            price: true,
-            status: true,
-            thumbnailFront: true,
-            thumbnailBack: true,
-            size: true,
-            favoriteCount: true,
-            category: {
+            // Считаем общее количество доступных товаров в категории
+            _count: {
                 select: {
-                    name: true,
+                    products: { where: { status: 'AVAILABLE' } },
+                },
+            },
+            // Вкладываем первые 4 товара
+            products: {
+                where: { status: 'AVAILABLE' },
+                orderBy: { createdAt: 'desc' },
+                take: 4,
+                select: {
+                    id: true,
+                    title: true,
+                    slug: true,
+                    price: true,
+                    status: true,
+                    thumbnailFront: true,
+                    thumbnailBack: true,
+                    size: true,
+                    favoriteCount: true,
+                    category: {
+                        select: { name: true },
+                    },
                 },
             },
         },
@@ -32,38 +49,52 @@ export default async function Home() {
 
     return (
         <>
-            {/* Client Component — Canvas-анимация, RSC-граница не нарушена */}
+            {/* Клиентский Canvas*/}
             <ProductSequence folderName="sequence" frameCount={174} />
 
-            <section className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-24 bg-background">
-                <div className="flex items-baseline justify-between mb-12">
-                    <h2 className="text-3xl font-semibold tracking-tight">
-                        Уникальные экземпляры
-                    </h2>
-                    <Link
-                        href="/shop"
-                        className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
-                    >
-                        Смотреть все →
-                    </Link>
+            {/* STICKY НАВИГАЦИЯ (Lookbook Menu) */}
+            <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur border-b border-border/40">
+                <div className="max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12">
+                    <nav className="flex items-center h-14 overflow-x-auto whitespace-nowrap no-scrollbar snap-x gap-8">
+                        {categoriesWithProducts.map(category => (
+                            <a
+                                key={category.id}
+                                href={`#${category.slug}`}
+                                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors snap-start uppercase tracking-wider"
+                            >
+                                {category.name}
+                                <span className="ml-2 text-[10px] text-muted-foreground/70">
+                                    {category._count.products}
+                                </span>
+                            </a>
+                        ))}
+                    </nav>
                 </div>
+            </div>
 
-                {products.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {products.map((product, i) => (
-                            <ProductCard
-                                key={product.id}
-                                product={product}
-                                priority={i === 0}
+            {/* РЕНДЕР КАТЕГОРИЙ */}
+            <div className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 pb-24">
+                {categoriesWithProducts.length > 0 ? (
+                    <div className="flex flex-col gap-12">
+                        {categoriesWithProducts.map(category => (
+                            <CategorySection
+                                key={category.id}
+                                categoryId={category.id}
+                                categoryName={category.name}
+                                categorySlug={category.slug}
+                                initialProducts={category.products}
+                                totalAvailable={category._count.products}
                             />
                         ))}
                     </div>
                 ) : (
-                    <p className="py-16 text-center text-muted-foreground text-sm tracking-wide uppercase">
-                        Новые работы скоро появятся
-                    </p>
+                    <div className="py-32 text-center">
+                        <p className="text-muted-foreground text-sm tracking-wide uppercase">
+                            Архив пуст. Новые работы скоро появятся.
+                        </p>
+                    </div>
                 )}
-            </section>
+            </div>
         </>
     );
 }
