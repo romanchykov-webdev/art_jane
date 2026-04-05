@@ -1,8 +1,9 @@
 // prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma" 
+  provider   = "prisma-client-js"
+  output     = "../src/generated/prisma"
+
 }
 
 datasource db {
@@ -23,6 +24,7 @@ enum OrderStatus {
   SHIPPED
   CANCELLED
 }
+
 
 // 3. МОДЕЛЬ ТОВАРА (Искусство 1-of-1)
 model Product {
@@ -52,9 +54,14 @@ model Product {
   // АНАЛИТИКА / ИЗБРАННОЕ
   favoriteCount      Int           @default(0)
 
-  // СВЯЗИ
+// СВЯЗИ
+  categoryId         String
+  category           Category      @relation(fields: [categoryId], references: [id])
+  
   orderId            String?
   order              Order?        @relation(fields: [orderId], references: [id])
+
+  @@index([categoryId])
 
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
@@ -82,4 +89,16 @@ model Order {
   updatedAt        DateTime    @updatedAt
 
   @@index([stripeSessionId])
+}
+
+// 5. МОДЕЛЬ КАТЕГОРИИ
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique // Например: "Футболки"
+  slug        String    @unique // Например: "t-shirts"
+  
+  products    Product[] // Связь: в одной категории много товаров
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
