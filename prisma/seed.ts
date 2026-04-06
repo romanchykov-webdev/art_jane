@@ -14,12 +14,12 @@ async function main() {
     console.log('Seeding Categories... 🗂️');
 
     const categoriesData = [
-        { name: 'Футболки', slug: 't-shirts' },
-        { name: 'Кофты', slug: 'sweaters' },
-        { name: 'Сумки', slug: 'bags' },
-        { name: 'Штаны', slug: 'pants' },
-        { name: 'Куртки', slug: 'jackets' },
-        { name: 'Костюмы', slug: 'suits' },
+        { name: 'T-shirts', slug: 't-shirts' },
+        { name: 'Sweatshirts', slug: 'sweaters' },
+        { name: 'Bags', slug: 'bags' },
+        { name: 'Trousers', slug: 'pants' },
+        { name: 'Jackets', slug: 'jackets' },
+        { name: 'Costumes', slug: 'suits' },
     ];
 
     const createdCategories: Record<string, string> = {};

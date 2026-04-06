@@ -1,16 +1,17 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+interface UnitsCounterProps {
+    units: number;
+    classWrapper?: string;
+    classUnits?: string;
+}
 
 export function UnitsCounter({
     units,
     classWrapper,
     classUnits,
-}: {
-    units: number;
-    classWrapper?: string;
-    classUnits?: string;
-}) {
+}: UnitsCounterProps) {
     return (
         <span
             className={cn(
@@ -20,7 +21,7 @@ export function UnitsCounter({
         >
             <span
                 className={cn(
-                    'text-xs text-amber-500 text-shadow-sm transition-all duration-300',
+                    'text-xs text-amber-500 text-shadow-sm transition-all duration-300 font-jane',
                     classUnits
                 )}
             >

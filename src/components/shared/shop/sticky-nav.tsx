@@ -45,22 +45,22 @@ export function StickyNav({ categories }: { categories: Category[] }) {
                 <a
                     key={category.id}
                     href={`#${category.slug}`}
-                    className={`text-sm font-medium snap-start uppercase tracking-wider
+                    className={`text-sm font-medium snap-start uppercase tracking-wider font-jane
                         border rounded-full px-4 py-2 relative
                         transition-all duration-500 group
                         hover:text-amber-500 hover:text-shadow-sm hover:border-amber-500 hover:bg-gray-200 hover:shadow-sm hover:shadow-black/30
                         ${
                             activeSlug === category.slug
-                                ? 'text-amber-500 border-amber-500 bg-gray-200 shadow-sm shadow-black/30 text-shadow-sm'
-                                : 'text-muted-foreground border-amber-300'
+                                ? 'text-amber-500 border-amber-500 bg-gray-200 shadow-sm shadow-black/30 text-shadow-sm duration-100'
+                                : 'text-muted-foreground border-amber-300 '
                         }
                     `}
                 >
                     {category.name}
                     <UnitsCounter
                         units={category._count.products}
-                        classWrapper="absolute -top-1 right-0"
-                        classUnits="text-xs text-amber-500 text-shadow-sm transition-all duration-300"
+                        classWrapper="-top-1 right-0"
+                        classUnits=""
                     />
                 </a>
             ))}
