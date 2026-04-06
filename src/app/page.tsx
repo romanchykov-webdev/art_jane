@@ -1,6 +1,7 @@
 // src/app/page.tsx
 import { ProductSequence } from '@/components/shared/canvas/product-sequence';
 import { CategorySection } from '@/components/shared/shop/category-section';
+import { StickyNav } from '@/components/shared/shop/sticky-nav';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -55,20 +56,7 @@ export default async function Home() {
             {/* STICKY НАВИГАЦИЯ (Lookbook Menu) */}
             <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur border-b border-border/40">
                 <div className="max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12">
-                    <nav className="flex items-center h-14 overflow-x-auto whitespace-nowrap no-scrollbar snap-x gap-8">
-                        {categoriesWithProducts.map(category => (
-                            <a
-                                key={category.id}
-                                href={`#${category.slug}`}
-                                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors snap-start uppercase tracking-wider"
-                            >
-                                {category.name}
-                                <span className="ml-2 text-[10px] text-muted-foreground/70">
-                                    {category._count.products}
-                                </span>
-                            </a>
-                        ))}
-                    </nav>
+                    <StickyNav categories={categoriesWithProducts} />
                 </div>
             </div>
 
