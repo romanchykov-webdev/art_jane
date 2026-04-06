@@ -47,7 +47,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             </Link>
 
             {/* content  */}
-            <div className=" rounded-xl pt-5 -mt-5 shadow-md shadow-black/30 relative ">
+            <div className=" rounded-xl pt-5 -mt-1 shadow-md shadow-black/30 relative bg-gray-300">
                 <CardContentComponent
                     product={product}
                     formattedPrice={formatPrice(product.price)}
