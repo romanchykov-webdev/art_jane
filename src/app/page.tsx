@@ -78,7 +78,7 @@ export default async function Home() {
                 ) : (
                     <div className="py-32 text-center">
                         <p className="text-muted-foreground text-sm tracking-wide uppercase">
-                            Архив пуст. Новые работы скоро появятся.
+                            The archive is empty. New works will appear soon.
                         </p>
                     </div>
                 )}

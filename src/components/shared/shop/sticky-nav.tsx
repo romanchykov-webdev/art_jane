@@ -12,7 +12,7 @@ interface Category {
 }
 
 export function StickyNav({ categories }: { categories: Category[] }) {
-    console.log('categories', categories);
+    // console.log('categories', categories);
 
     const [activeSlug, setActiveSlug] = useState<string | null>(null);
 
