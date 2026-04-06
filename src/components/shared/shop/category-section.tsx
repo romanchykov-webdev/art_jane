@@ -76,12 +76,12 @@ export function CategorySection({
         <section id={categorySlug} className="w-full pt-16 scroll-mt-24">
             {/* ЗАГОЛОВОК КАТЕГОРИИ */}
             <div className="flex items-baseline justify-between mb-8">
-                <h2 className="text-2xl font-bold tracking-tight uppercase">
+                <h2 className="text-2xl font-bold tracking-tight uppercase relative">
                     {categoryName}
+                    <span className="text-xs  bg-gray-200 w-4 h-4 rounded-full flex items-center justify-center shadow-sm text-amber-500 shadow-black/90 absolute -top-2 -right-5">
+                        {totalAvailable}
+                    </span>
                 </h2>
-                <span className="text-sm text-muted-foreground font-medium ">
-                    {totalAvailable}
-                </span>
             </div>
 
             {/* СЕТКА ТОВАРОВ */}
