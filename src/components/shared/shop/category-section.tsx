@@ -7,7 +7,7 @@ import { useState, useTransition } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { getMoreProductsByCategory } from '@/actions/shop';
-import { ProductCard } from '@/components/shared/shop/product-card';
+import { ProductCard } from '@/components/shared/shop/productCatr/product-card';
 import { Button } from '@/components/ui/button';
 import { ProductCardProps } from '@/types/product';
 
@@ -188,9 +188,9 @@ export function CategorySection({
                             <>
                                 {isExpanded
                                     ? 'Collapse'
-                                    : `Show all (${totalAvailable})`}
+                                    : `Show all (${totalAvailable - 4})`}
                                 <ChevronUp
-                                    className={`ml-2 h-4 w-4 transition-transform duration-300 shadow-sm ${
+                                    className={`ml-2 h-4 w-4 transition-transform duration-300  ${
                                         isExpanded ? 'rotate-0' : 'rotate-180'
                                     }`}
                                 />

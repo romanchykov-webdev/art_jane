@@ -10,10 +10,13 @@ export async function getMoreProductsByCategory(
         const products = await prisma.product.findMany({
             where: {
                 categoryId: categoryId,
-                status: 'AVAILABLE',
+                // status: 'AVAILABLE',
             },
             skip: skip, // Пропускаем первые 4 товара, которые уже отрендерил сервер
-            orderBy: { createdAt: 'desc' },
+            orderBy: [
+                { status: 'asc' }, // ← такой же порядок как в page.tsx
+                { createdAt: 'desc' },
+            ],
             select: {
                 id: true,
                 title: true,

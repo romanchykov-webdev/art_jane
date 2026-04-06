@@ -11,7 +11,7 @@ export default async function Home() {
     const categoriesWithProducts = await prisma.category.findMany({
         where: {
             products: {
-                some: { status: 'AVAILABLE' }, // Берем ТОЛЬКО категории, где есть доступные товары
+                // some: { status: 'AVAILABLE' }, // Берем ТОЛЬКО категории, где есть доступные товары
             },
         },
         orderBy: { name: 'asc' },
@@ -22,13 +22,17 @@ export default async function Home() {
             // Считаем общее количество доступных товаров в категории
             _count: {
                 select: {
-                    products: { where: { status: 'AVAILABLE' } },
+                    // products: { where: { status: 'AVAILABLE' } },
+                    products: true,
                 },
             },
             // Вкладываем первые 4 товара
             products: {
-                where: { status: 'AVAILABLE' },
-                orderBy: { createdAt: 'desc' },
+                // where: { status: 'AVAILABLE' },
+                orderBy: [
+                    { status: 'asc' }, // AVAILABLE → RESERVED → SOLD
+                    { createdAt: 'desc' }, // внутри каждой группы — новые первыми
+                ],
                 take: 4,
                 select: {
                     id: true,
