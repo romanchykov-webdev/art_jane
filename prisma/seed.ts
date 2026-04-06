@@ -798,6 +798,18 @@ async function main() {
     }
 
     console.log('Database seeded with Categories! 🚀');
+
+    console.log('Seeding Site Settings...');
+    await prisma.siteSettings.upsert({
+        where: { id: 'global' },
+        update: {},
+        create: {
+            id: 'global',
+            heroSequenceFolder: 'sequence',
+            heroSequenceFrameCount: 174,
+        },
+    });
+    console.log('Site Settings seeded.');
 }
 
 main()

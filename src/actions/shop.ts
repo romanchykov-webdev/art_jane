@@ -11,17 +11,28 @@ export async function getMoreProductsByCategory(
     categoryId: string,
     skip: number = 4
 ): Promise<GetMoreProductsResult> {
+    // 1. SECURITY GUARD: Защита от неверного формата категории
+    if (
+        !categoryId ||
+        typeof categoryId !== 'string' ||
+        categoryId.length > 50
+    ) {
+        return { success: false, error: 'Неверный идентификатор категории' };
+    }
+
+    // 2. SECURITY GUARD: Защита от отрицательной пагинации и перегрузки базы
+    if (typeof skip !== 'number' || skip < 0 || skip > 1000) {
+        return { success: false, error: 'Неверный параметр пагинации' };
+    }
+
     try {
         const products = await prisma.product.findMany({
             where: {
                 categoryId: categoryId,
-                // Загружаем все товары (включая SOLD/RESERVED), чтобы использовать как витрину-архив
             },
             skip: skip,
-            orderBy: [
-                { status: 'asc' }, // AVAILABLE всегда будут выше, чем SOLD
-                { createdAt: 'desc' },
-            ],
+            // take: 12,
+            orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
             select: {
                 id: true,
                 title: true,

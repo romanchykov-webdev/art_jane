@@ -102,3 +102,14 @@ model Category {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
+
+// 6. ГЛОБАЛЬНЫЕ НАСТРОЙКИ САЙТА (Singleton)
+model SiteSettings {
+  // Используем жестко заданный ID, чтобы всегда обращаться к одной и той же строке
+  id                     String   @id @default("global") 
+  
+  heroSequenceFolder     String   @default("sequence")
+  heroSequenceFrameCount Int      @default(174)
+  
+  updatedAt              DateTime @updatedAt
+}

@@ -12,6 +12,8 @@ import { ProductCard } from '@/components/shared/shop/product-card/product-card'
 import { Button } from '@/components/ui/button';
 import { ProductCardData } from '@/types/product';
 
+import { UnitsCounter } from './units-counter';
+
 interface CategorySectionProps {
     categoryId: string;
     categoryName: string;
@@ -120,8 +122,8 @@ export function CategorySection({
             <div className="flex items-baseline justify-between mb-8">
                 <h2 className="text-2xl font-bold tracking-tight uppercase relative text-shadow-xl shadow-black/90 font-jane">
                     {categoryName}
-                    <span className="text-xs  bg-gray-200 w-4 h-4 rounded-full flex items-center justify-center shadow-sm text-amber-500 shadow-black/90 absolute -top-2 -right-5">
-                        {totalAvailable}
+                    <span className="absolute top-0 -right-2">
+                        <UnitsCounter units={totalAvailable} />
                     </span>
                 </h2>
             </div>

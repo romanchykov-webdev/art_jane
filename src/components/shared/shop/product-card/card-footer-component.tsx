@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
 import { Heart, ShoppingCart } from 'lucide-react';
