@@ -66,15 +66,29 @@ export const useCanvasSequence = ({
             const promises = Array.from({ length: frameCount }).map(
                 (_, index) => {
                     return new Promise<HTMLImageElement>((resolve, reject) => {
-                        if (signal.aborted)
+                        if (signal.aborted) {
                             return reject(
                                 new DOMException('Aborted', 'AbortError')
                             );
+                        }
 
                         const img = new Image();
                         loadingImages.push(img);
 
+                        // 1. СЛУШАТЕЛЬ ОТМЕНЫ (ABORT)
+
+                        const onAbort = () => {
+                            img.onload = null;
+                            img.onerror = null;
+                            img.src = '';
+                            reject(new DOMException('Aborted', 'AbortError'));
+                        };
+                        signal.addEventListener('abort', onAbort, {
+                            once: true,
+                        });
+
                         img.onload = () => {
+                            signal.removeEventListener('abort', onAbort);
                             updateProgress();
                             img.onload = null;
                             img.onerror = null;
@@ -82,7 +96,8 @@ export const useCanvasSequence = ({
                         };
 
                         img.onerror = () => {
-                            updateProgress(); // Считаем ошибку как прогресс, чтобы лоадер не завис
+                            signal.removeEventListener('abort', onAbort);
+                            updateProgress();
                             img.onload = null;
                             img.onerror = null;
                             img.src = '';
@@ -119,20 +134,21 @@ export const useCanvasSequence = ({
             }
         };
 
-        preloadImages();
+        preloadImages().catch(err => {
+            // Если это ошибка отмены (компонент размонтировался) — просто выходим
+            if (err instanceof DOMException && err.name === 'AbortError')
+                return;
+
+            // Если что-то другое — логируем, чтобы не пропустить баг
+            console.error('[CanvasSequence] Unexpected preload error:', err);
+        });
 
         return () => {
+            //  ОЧИСТКА
             abortController.abort();
-            // Жесткая отмена браузерных загрузок и зачистка обработчиков (защита от утечек памяти)
-            loadingImages.forEach(img => {
-                img.onload = null;
-                img.onerror = null;
-                img.src = '';
-            });
+
             imagesRef.current = [];
             isLoadedRef.current = false;
-            setIsLoaded(false);
-            setLoadingProgress(0); // Сбрасываем прогресс при размонтировании
         };
     }, [frameCount, getFrameUrl]);
 
@@ -199,28 +215,26 @@ export const useCanvasSequence = ({
 
         let resizeTimeout: ReturnType<typeof setTimeout>;
 
+        // Единая функция синхронизации размеров
+        const syncLayout = () => {
+            if (canvasRef.current) {
+                canvasRef.current.width = window.innerWidth;
+                canvasRef.current.height = window.innerHeight;
+            }
+            updateGeometry();
+            handleScroll(); // Заставляем канвас перерисовать текущий кадр в новых пропорциях
+        };
+
         const handleResize = () => {
             clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                if (canvasRef.current) {
-                    canvasRef.current.width = window.innerWidth;
-                    canvasRef.current.height = window.innerHeight;
-                }
-                updateGeometry();
-                handleScroll();
-            }, 150);
+            resizeTimeout = setTimeout(syncLayout, 150); // Дебаунс ресайза для производительности
         };
 
         window.addEventListener('resize', handleResize);
         window.addEventListener('scroll', handleScroll, { passive: true });
 
-        // Первичный вызов
-        if (canvasRef.current) {
-            canvasRef.current.width = window.innerWidth;
-            canvasRef.current.height = window.innerHeight;
-        }
-        updateGeometry();
-        handleScroll();
+        // Первичная настройка при монтировании
+        syncLayout();
 
         return () => {
             clearTimeout(resizeTimeout);
