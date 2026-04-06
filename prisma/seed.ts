@@ -328,13 +328,14 @@ async function main() {
             price: 12500,
             status: ProductStatus.AVAILABLE,
             thumbnailFront:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
             thumbnailBack:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             gallery: [
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
@@ -350,13 +351,14 @@ async function main() {
             price: 12500,
             status: ProductStatus.AVAILABLE,
             thumbnailFront:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
             thumbnailBack:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             gallery: [
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
@@ -372,13 +374,14 @@ async function main() {
             price: 12500,
             status: ProductStatus.AVAILABLE,
             thumbnailFront:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
             thumbnailBack:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             gallery: [
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
@@ -394,13 +397,14 @@ async function main() {
             price: 12500,
             status: ProductStatus.AVAILABLE,
             thumbnailFront:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
             thumbnailBack:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             gallery: [
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
@@ -416,13 +420,14 @@ async function main() {
             price: 12500,
             status: ProductStatus.AVAILABLE,
             thumbnailFront:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
             thumbnailBack:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             gallery: [
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
@@ -438,13 +443,14 @@ async function main() {
             price: 12500,
             status: ProductStatus.AVAILABLE,
             thumbnailFront:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
             thumbnailBack:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             gallery: [
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
@@ -460,13 +466,14 @@ async function main() {
             price: 12500,
             status: ProductStatus.AVAILABLE,
             thumbnailFront:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
             thumbnailBack:
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             gallery: [
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_back.webp',
-                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/cat/cat_front.webp',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',

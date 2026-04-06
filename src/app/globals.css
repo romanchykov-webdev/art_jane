@@ -121,6 +121,9 @@
 html {
     scroll-behavior: smooth;
 }
+main {
+    background-color: #e5e7eb !important;
+}
 /* Скрытие дефолтного скроллбара для горизонтального меню */
 @layer utilities {
     .no-scrollbar::-webkit-scrollbar {
