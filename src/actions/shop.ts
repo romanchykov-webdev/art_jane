@@ -1,20 +1,25 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { ProductCardData } from '@/types/product';
+
+export type GetMoreProductsResult =
+    | { success: true; data: ProductCardData[] }
+    | { success: false; error: string };
 
 export async function getMoreProductsByCategory(
     categoryId: string,
     skip: number = 4
-) {
+): Promise<GetMoreProductsResult> {
     try {
         const products = await prisma.product.findMany({
             where: {
                 categoryId: categoryId,
-                // status: 'AVAILABLE',
+                // Загружаем все товары (включая SOLD/RESERVED), чтобы использовать как витрину-архив
             },
-            skip: skip, // Пропускаем первые 4 товара, которые уже отрендерил сервер
+            skip: skip,
             orderBy: [
-                { status: 'asc' }, // ← такой же порядок как в page.tsx
+                { status: 'asc' }, // AVAILABLE всегда будут выше, чем SOLD
                 { createdAt: 'desc' },
             ],
             select: {
@@ -35,7 +40,6 @@ export async function getMoreProductsByCategory(
             },
         });
 
-        // Возвращаем структурированный ответ для безопасной обработки на клиенте
         return { success: true, data: products };
     } catch (error) {
         console.error('[getMoreProductsByCategory_ERROR]', error);

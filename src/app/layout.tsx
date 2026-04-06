@@ -1,5 +1,5 @@
+import { Toaster } from '@/components/ui/sonner';
 import type { Metadata } from 'next';
-
 import './globals.css';
 
 // fonts
@@ -29,6 +29,7 @@ export default function RootLayout({
                 {/* Header (Navbar) */}
                 <main className="flex-grow flex flex-col">{children}</main>
                 {/*  Footer */}
+                <Toaster position="bottom-center" />
             </body>
         </html>
     );

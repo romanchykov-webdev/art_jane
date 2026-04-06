@@ -9,7 +9,7 @@ interface Props {
     product: {
         title: string;
         size: string;
-        category?: { name: string };
+        category?: { name: string } | null;
     };
     formattedPrice: string;
     toggleSide: (e: React.MouseEvent) => void;
@@ -23,17 +23,17 @@ export function CardContentComponent({
     return (
         <CardContent className="p-0 grow relative mb-5 px-2">
             {/* СТРЕЛКИ СЛАЙДЕРА */}
-            <div className="w-full flex items-center justify-between transition-opacity duration-300 mb-5">
+            <div className="w-full flex items-center justify-between transition-opacity duration-300 my-5">
                 <Button
                     variant="secondary"
-                    className="h-12 w-12 rounded-full bg-background/80 backdrop-blur hover:bg-background opacity-70"
+                    className="h-12 w-12 rounded-full bg-background/80 backdrop-blur hover:bg-background opacity-70 cursor-pointer"
                     onClick={toggleSide}
                 >
                     <ChevronLeft className="size-10" />
                 </Button>
                 <Button
                     variant="secondary"
-                    className="h-12 w-12 rounded-full bg-background/80 backdrop-blur hover:bg-background opacity-70"
+                    className="h-12 w-12 rounded-full bg-background/80 backdrop-blur hover:bg-background opacity-70 cursor-pointer"
                     onClick={toggleSide}
                 >
                     <ChevronRight className="size-10" />
@@ -44,7 +44,7 @@ export function CardContentComponent({
                 {/* description */}
                 <div className="flex flex-col">
                     {product.category?.name && (
-                        <span className="text-sm font-semibold tracking-wider text-white uppercase mb-2 text-shadow-md">
+                        <span className="text-sm font-semibold tracking-wider text-gray-500 uppercase mb-2 text-shadow-md">
                             {product.category.name}
                         </span>
                     )}
@@ -52,7 +52,7 @@ export function CardContentComponent({
                         {product.title}
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground uppercase text-shadow-xs">
-                        <span className="text-white">Size : </span>
+                        <span className="text-gray-500">Size : </span>
                         {product.size}
                     </p>
                 </div>

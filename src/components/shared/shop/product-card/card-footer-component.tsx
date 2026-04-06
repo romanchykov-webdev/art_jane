@@ -13,8 +13,8 @@ export function CardFooterComponent({ isAvailable }: Props) {
         <CardFooter className=" p-0 flex font-jane">
             <Button
                 variant="destructive"
-                className="flex-1 gap-2 rounded-none  py-6 uppercase tracking-widest 
-                        text-xs transition-transform active:scale-[0.98] border-none text-black font-jane    
+                className="flex-1 gap-2 rounded-none  py-6 uppercase tracking-widest cursor-pointer
+                        text-xs transition-all duration-300 active:scale-[0.98] border-none text-black font-jane    
                         "
                 disabled={!isAvailable}
             >
@@ -33,8 +33,8 @@ export function CardFooterComponent({ isAvailable }: Props) {
             <Button
                 variant="destructive"
                 size="icon"
-                className="flex-1 gap-2 rounded-none py-6 uppercase tracking-widest text-xs 
-                        transition-transform active:scale-[0.98]  border-none"
+                className="flex-1 gap-2 rounded-none py-6 uppercase tracking-widest text-xs cursor-pointer
+                        transition-all duration-300 active:scale-[0.98]  border-none "
             >
                 <Heart className="size-10 text-black" />
             </Button>

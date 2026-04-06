@@ -1,4 +1,4 @@
-import { ProductCard } from '@/components/shared/shop/productCatr/product-card';
+import { ProductCard } from '@/components/shared/shop/product-card/product-card';
 import { prisma } from '@/lib/prisma';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';

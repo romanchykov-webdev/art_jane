@@ -5,19 +5,18 @@ import { ChevronUp, Loader2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 
 import { AnimatePresence, motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 import { getMoreProductsByCategory } from '@/actions/shop';
-import { ProductCard } from '@/components/shared/shop/productCatr/product-card';
+import { ProductCard } from '@/components/shared/shop/product-card/product-card';
 import { Button } from '@/components/ui/button';
-import { ProductCardProps } from '@/types/product';
-
-type Product = ProductCardProps['product'];
+import { ProductCardData } from '@/types/product';
 
 interface CategorySectionProps {
     categoryId: string;
     categoryName: string;
     categorySlug: string;
-    initialProducts: Product[];
+    initialProducts: ProductCardData[];
     totalAvailable: number;
 }
 
@@ -74,7 +73,8 @@ export function CategorySection({
     initialProducts,
     totalAvailable,
 }: CategorySectionProps) {
-    const [products, setProducts] = useState<Product[]>(initialProducts);
+    const [products, setProducts] =
+        useState<ProductCardData[]>(initialProducts);
     const [isExpanded, setIsExpanded] = useState(false);
     const [hasFetchedAll, setHasFetchedAll] = useState(false);
 
@@ -101,15 +101,15 @@ export function CategorySection({
         startTransition(async () => {
             const result = await getMoreProductsByCategory(categoryId, 4);
 
-            if (result.success && result.data) {
-                setProducts(prev => [
-                    ...prev,
-                    ...(result.data as unknown as Product[]),
-                ]);
+            // 1. ПРОВЕРЯЕМ ТОЛЬКО МАРКЕР УСПЕХА
+            if (result.success) {
+                setProducts(prev => [...prev, ...result.data]);
                 setHasFetchedAll(true);
                 setIsExpanded(true);
             } else {
-                console.error(result.error);
+                toast.error('Ошибка загрузки архива', {
+                    description: result.error,
+                });
             }
         });
     };
@@ -202,5 +202,3 @@ export function CategorySection({
         </section>
     );
 }
-// [NITPICKS]
-// В идеале, обработку ошибок от getMoreProductsByCategory стоит связать с useToast из shadcn/ui, чтобы пользователь видел красивое всплывающее уведомление, если интернет отвалится во время загрузки.

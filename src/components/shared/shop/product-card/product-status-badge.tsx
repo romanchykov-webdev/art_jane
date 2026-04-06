@@ -1,14 +1,15 @@
 import { Badge } from '@/components/ui/badge';
+import { ProductStatus } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
 import React, { JSX } from 'react';
 
 interface Props {
     isAvailable: boolean;
     classBage?: string;
-    status: string;
+    status: ProductStatus;
 }
 
-export const Bage: React.FC<Props> = ({
+export const ProductStatusBadge: React.FC<Props> = ({
     isAvailable,
     classBage,
     status,
