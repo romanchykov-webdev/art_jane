@@ -60,7 +60,7 @@ const cardVariants = {
         opacity: 1,
         scale: 1,
         transition: {
-            type: 'spring', // Пружинная анимация для премиальности
+            type: 'spring' as const, // Пружинная анимация для премиальности
             stiffness: 100,
             damping: 15,
         },
@@ -190,7 +190,7 @@ export function CategorySection({
                                     ? 'Collapse'
                                     : `Show all (${totalAvailable})`}
                                 <ChevronUp
-                                    className={`ml-2 h-4 w-4 transition-transform duration-300 ${
+                                    className={`ml-2 h-4 w-4 transition-transform duration-300 shadow-sm ${
                                         isExpanded ? 'rotate-0' : 'rotate-180'
                                     }`}
                                 />
