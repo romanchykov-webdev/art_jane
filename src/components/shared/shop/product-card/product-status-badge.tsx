@@ -21,7 +21,7 @@ export const ProductStatusBadge: React.FC<Props> = ({
                     variant="destructive"
                     className={cn(
                         // Базовые стили и позиционирование
-                        'absolute left-0 top-0 z-10 flex items-center justify-center uppercase text-white text-shadow-sm',
+                        'absolute left-0 top-0 z-10 flex items-center justify-center uppercase text-white text-shadow-sm ',
                         'min-w-10 h-10 rounded-none rounded-br-lg px-6 font-jane',
                         // Эффект матового стекла
                         'bg-amber-500/60 backdrop-blur-md',
