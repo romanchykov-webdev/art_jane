@@ -26,14 +26,14 @@ export function CardContentComponent({
             <div className="w-full flex items-center justify-between transition-opacity duration-300 my-5">
                 <Button
                     variant="secondary"
-                    className="h-12 w-12 rounded-full bg-background/80 backdrop-blur hover:bg-background opacity-70 cursor-pointer"
+                    className="h-12 w-12 rounded-full  hover:bg-background opacity-70 cursor-pointer shadow-even"
                     onClick={toggleSide}
                 >
                     <ChevronLeft className="size-10" />
                 </Button>
                 <Button
                     variant="secondary"
-                    className="h-12 w-12 rounded-full bg-background/80 backdrop-blur hover:bg-background opacity-70 cursor-pointer"
+                    className="h-12 w-12 rounded-full  hover:bg-background opacity-70 cursor-pointer shadow-even"
                     onClick={toggleSide}
                 >
                     <ChevronRight className="size-10" />
