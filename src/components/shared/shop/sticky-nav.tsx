@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { UnitsCounter } from './units-counter';
+
 interface Category {
     id: string;
     name: string;
@@ -12,31 +13,42 @@ interface Category {
 }
 
 export function StickyNav({ categories }: { categories: Category[] }) {
-    // console.log('categories', categories);
-
     const [activeSlug, setActiveSlug] = useState<string | null>(null);
 
     useEffect(() => {
-        const observers: IntersectionObserver[] = [];
+        // Защита от пустого массива
+        if (categories.length === 0) return;
 
-        categories.forEach(category => {
-            const section = document.getElementById(category.slug);
-            if (!section) return;
+        const handleScroll = () => {
+            const scrollPosition = window.scrollY + 106;
 
-            const observer = new IntersectionObserver(
-                ([entry]) => {
-                    if (entry.isIntersecting) {
-                        setActiveSlug(category.slug);
-                    }
-                },
-                { threshold: 0.3 } // секция видна на 30%+
-            );
+            let currentActive: string | null = null;
 
-            observer.observe(section);
-            observers.push(observer);
-        });
+            for (const category of categories) {
+                const section = document.getElementById(category.slug);
+                if (!section) continue;
 
-        return () => observers.forEach(o => o.disconnect());
+                // Если верхняя граница секции пересекла нашу "линию видимости"
+                if (section.offsetTop <= scrollPosition) {
+                    currentActive = category.slug;
+                }
+            }
+
+            // Fallback: если мы в самом верху страницы, подсвечиваем первую категорию
+            if (!currentActive && window.scrollY < 100) {
+                currentActive = categories[0].slug;
+            }
+
+            setActiveSlug(currentActive);
+        };
+
+        // passive: true критически важно для производительности скролла (защита от лагов)
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        // Принудительный вызов при монтировании, чтобы сразу подсветить активную категорию
+        handleScroll();
+
+        return () => window.removeEventListener('scroll', handleScroll);
     }, [categories]);
 
     return (
