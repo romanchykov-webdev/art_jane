@@ -1,4 +1,3 @@
-// src/components/shop/category-section.tsx
 'use client';
 
 import { ChevronUp, Loader2 } from 'lucide-react';
