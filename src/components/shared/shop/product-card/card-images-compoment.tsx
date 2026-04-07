@@ -22,7 +22,7 @@ export function CardImagesComponent({
         <div
             className={cn(
                 'relative h-full w-full',
-                !isAvailable && 'grayscale brightness-75'
+                !isAvailable && 'opacity-95'
             )}
         >
             <Image
