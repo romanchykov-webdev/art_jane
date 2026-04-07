@@ -48,7 +48,7 @@
     --radius-4xl: calc(var(--radius) * 2.6);
     /* castome class  Tailwind*/
     --font-jane: var(--font-jane);
-    --shadow-even-xs: 0 0 2px rgba(0, 0, 0, 0.15);
+    --shadow-even-xs: 0 0 0 rgba(0, 0, 0, 0.15);
     --shadow-even-sm: 0 0 4px rgba(0, 0, 0, 0.2);
     --shadow-even: 0 0 6px rgba(0, 0, 0, 0.25);
     --shadow-even-md: 0 0 10px rgba(0, 0, 0, 0.3);

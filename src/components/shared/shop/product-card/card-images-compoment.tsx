@@ -21,8 +21,8 @@ export function CardImagesComponent({
     return (
         <div
             className={cn(
-                'relative h-full w-full',
-                !isAvailable && 'grayscale brightness-75'
+                'relative h-full w-full'
+                // !isAvailable && 'grayscale brightness-75'
             )}
         >
             <Image
