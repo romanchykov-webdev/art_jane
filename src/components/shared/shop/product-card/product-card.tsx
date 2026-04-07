@@ -22,12 +22,12 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
 
     return (
         <Card
-            className="group  border-none bg-gray-200 transition-all duration-500 flex flex-col
-          py-0 shadow-md shadow-black/30  hover:shadow-lg gap-0"
+            className="group  border-none bg-white transition-all duration-500 flex flex-col
+          py-0 shadow-even-md  hover:shadow-even-lg gap-0"
         >
             <Link
                 href={`/product/${product.slug}`}
-                className="relative block aspect-3/4 overflow-hidden  bg-muted"
+                className="relative block aspect-3/4 overflow-hidden  bg-white"
             >
                 {/* СТАТУС БЕЙДЖ */}
                 <ProductStatusBadge
@@ -47,7 +47,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             </Link>
 
             {/* content  */}
-            <div className=" rounded-xl pt-5 -mt-1 shadow-md shadow-black/30 relative bg-gray-300">
+            <div className=" rounded-xl pt-5   relative ">
                 <CardContentComponent
                     product={product}
                     formattedPrice={formatPrice(product.price)}
