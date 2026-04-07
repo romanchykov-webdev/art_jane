@@ -50,7 +50,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             {/* 3. КОНТЕНТ (Стеклянный подиум) */}
             <div
                 className="
-                    relative z-10 -mt-5  pt-2 pb-4 
+                    relative z-10 -mt-5  pt-2
                     rounded-xl overflow-hidden
                     bg-white/40 dark:bg-black/40 
                     backdrop-blur-md 
