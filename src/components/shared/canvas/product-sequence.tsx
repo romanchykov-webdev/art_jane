@@ -1,5 +1,6 @@
 'use client';
 
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCanvasSequence } from '@/hooks/use-canvas-sequence';
 import {
     DeviceBreakpoint,
@@ -51,45 +52,52 @@ export const ProductSequence = ({
 
                 {/* лоадер-оверлей */}
                 <div
-                    className={`absolute inset-0 z-10 bg-zinc-950 flex flex-col items-center justify-center transition-opacity duration-700 ease-in-out ${
+                    className={`absolute inset-0 z-10 transition-opacity duration-700 ease-in-out ${
                         isLoaded
                             ? 'opacity-0 pointer-events-none'
                             : 'opacity-100'
                     }`}
                 >
-                    <div className="relative flex items-center justify-center w-32 h-32">
-                        {/* Фоновое кольцо */}
-                        <svg className="absolute w-full h-full transform -rotate-90">
-                            <circle
-                                cx="64"
-                                cy="64"
-                                r={circleRadius}
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                fill="transparent"
-                                className="text-zinc-800"
-                            />
-                            {/* Кольцо прогресса */}
-                            <circle
-                                cx="64"
-                                cy="64"
-                                r={circleRadius}
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                fill="transparent"
-                                strokeDasharray={circleCircumference}
-                                strokeDashoffset={strokeDashoffset}
-                                className="text-white transition-all duration-200 ease-out"
-                            />
-                        </svg>
-                        {/* Цифры в центре */}
-                        <span className="text-xl font-bold tracking-tighter text-white">
-                            {loadingProgress}%
-                        </span>
-                    </div>
-                    <p className="mt-4 text-xs font-medium tracking-[0.2em] text-zinc-500 uppercase">
-                        Подготовка текстур
-                    </p>
+                    <Skeleton className="w-full h-full rounded-none bg-gray-300 flex items-center justify-center">
+                        <div className="flex flex-col items-center justify-center">
+                            <div className="relative flex items-center justify-center w-48 h-48">
+                                {/* Фоновое кольцо */}
+                                <svg
+                                    viewBox="0 0 128 128"
+                                    className="absolute w-full h-full transform -rotate-90"
+                                >
+                                    <circle
+                                        cx="64"
+                                        cy="64"
+                                        r={circleRadius}
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        fill="transparent"
+                                        className="text-zinc-800"
+                                    />
+                                    {/* Кольцо прогресса */}
+                                    <circle
+                                        cx="64"
+                                        cy="64"
+                                        r={circleRadius}
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        fill="transparent"
+                                        strokeDasharray={circleCircumference}
+                                        strokeDashoffset={strokeDashoffset}
+                                        className="text-amber-500 transition-all duration-200 ease-out"
+                                    />
+                                </svg>
+                                {/* Цифры в центре */}
+                                <span className="text-4xl font-bold tracking-tighter text-white">
+                                    {loadingProgress}%
+                                </span>
+                            </div>
+                            <p className="mt-4 text-md font-bold tracking-[0.2em] text-zinc-500 uppercase font-jane text-shadow-2xs/30">
+                                To load textures...
+                            </p>
+                        </div>
+                    </Skeleton>
                 </div>
 
                 {/* Интерактивный Канвас */}
