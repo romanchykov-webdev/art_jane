@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export interface CanvasSequenceOptions {
     frameCount: number;
     getFrameUrl: (index: number, breakpoint: DeviceBreakpoint) => string;
+    mode?: 'scroll' | 'controlled';
 }
 
 const getDeviceBreakpoint = (width: number): DeviceBreakpoint => {
@@ -15,11 +16,13 @@ const getDeviceBreakpoint = (width: number): DeviceBreakpoint => {
 export const useCanvasSequence = ({
     frameCount,
     getFrameUrl,
+    mode = 'scroll', // скролл для главной
 }: CanvasSequenceOptions) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const trackRef = useRef<HTMLElement | null>(null);
     const imagesRef = useRef<HTMLImageElement[]>([]);
     const requestRef = useRef<number>(0);
+    const currentFrameRef = useRef<number>(0); // Храним текущий кадр
 
     const isLoadedRef = useRef(false);
     const [isLoaded, setIsLoaded] = useState(false);
@@ -32,14 +35,13 @@ export const useCanvasSequence = ({
     const updateGeometry = useCallback(() => {
         if (!trackRef.current) return;
         const rect = trackRef.current.getBoundingClientRect();
-        // Вычисляем абсолютную позицию элемента на странице один раз
         geometryRef.current = {
             offsetTop: window.scrollY + rect.top,
             height: rect.height,
         };
     }, []);
 
-    // 1. БЕЗОПАСНАЯ ПРЕДЗАГРУЗКА
+    // 1. ПРЕДЗАГРУЗКА
     useEffect(() => {
         const abortController = new AbortController();
         const { signal } = abortController;
@@ -49,12 +51,7 @@ export const useCanvasSequence = ({
         let loadedCount = 0;
 
         const preloadImages = async () => {
-            if (frameCount === 0) {
-                console.error(
-                    '[CanvasSequence] Critical Error: frameCount is 0.'
-                );
-                return;
-            }
+            if (frameCount === 0) return;
 
             const updateProgress = () => {
                 loadedCount++;
@@ -66,16 +63,13 @@ export const useCanvasSequence = ({
             const promises = Array.from({ length: frameCount }).map(
                 (_, index) => {
                     return new Promise<HTMLImageElement>((resolve, reject) => {
-                        if (signal.aborted) {
+                        if (signal.aborted)
                             return reject(
                                 new DOMException('Aborted', 'AbortError')
                             );
-                        }
 
                         const img = new Image();
                         loadingImages.push(img);
-
-                        // 1. СЛУШАТЕЛЬ ОТМЕНЫ (ABORT)
 
                         const onAbort = () => {
                             img.onload = null;
@@ -124,29 +118,20 @@ export const useCanvasSequence = ({
                 if (successfulImages.length > 0) {
                     imagesRef.current = successfulImages;
                     setCurrentBreakpoint(actualBreakpoint);
-                    isLoadedRef.current = true; // Синхронно обновляем Ref для скролла
-                    setIsLoaded(true); // Обновляем State для React UI
-                } else {
-                    console.error(
-                        '[CanvasSequence] Critical Error: 0 frames loaded. CDN might be down.'
-                    );
+                    isLoadedRef.current = true;
+                    setIsLoaded(true);
                 }
             }
         };
 
         preloadImages().catch(err => {
-            // Если это ошибка отмены (компонент размонтировался) — просто выходим
             if (err instanceof DOMException && err.name === 'AbortError')
                 return;
-
-            // Если что-то другое — логируем, чтобы не пропустить баг
-            console.error('[CanvasSequence] Unexpected preload error:', err);
+            console.error('[CanvasSequence]', err);
         });
 
         return () => {
-            //  ОЧИСТКА
             abortController.abort();
-
             imagesRef.current = [];
             isLoadedRef.current = false;
         };
@@ -159,8 +144,11 @@ export const useCanvasSequence = ({
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Защита от выхода за пределы массива при частичной загрузке
-        const safeIndex = Math.min(index, imagesRef.current.length - 1);
+        const safeIndex = Math.max(
+            0,
+            Math.min(index, imagesRef.current.length - 1)
+        );
+        currentFrameRef.current = safeIndex; // Запоминаем для ресайза
         const img = imagesRef.current[safeIndex];
         if (!img) return;
 
@@ -184,13 +172,27 @@ export const useCanvasSequence = ({
         ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
     }, []);
 
-    // 3. ВЫСОКОПРОИЗВОДИТЕЛЬНАЯ СИНХРОНИЗАЦИЯ СО СКРОЛЛОМ
+    // ЭКСПОРТИРУЕМ ДЛЯ РЕЖИМА 'controlled' (Свайп 360)
+    const setFrame = useCallback(
+        (index: number) => {
+            if (requestRef.current) cancelAnimationFrame(requestRef.current);
+            requestRef.current = requestAnimationFrame(() =>
+                renderFrame(index)
+            );
+        },
+        [renderFrame]
+    );
+
+    // 3. СКРОЛЛ (Только для режима 'scroll')
     const handleScroll = useCallback(() => {
-        // Читаем из Ref
-        if (!isLoadedRef.current || imagesRef.current.length === 0) return;
+        if (
+            !isLoadedRef.current ||
+            imagesRef.current.length === 0 ||
+            mode !== 'scroll'
+        )
+            return;
 
         const { offsetTop, height } = geometryRef.current;
-
         const currentTop = offsetTop - window.scrollY;
         const windowHeight = window.innerHeight;
 
@@ -202,47 +204,44 @@ export const useCanvasSequence = ({
             frameCount - 1,
             Math.floor(progress * frameCount)
         );
+        setFrame(frameIndex);
+    }, [frameCount, mode, setFrame]);
 
-        if (requestRef.current) cancelAnimationFrame(requestRef.current);
-        requestRef.current = requestAnimationFrame(() =>
-            renderFrame(frameIndex)
-        );
-    }, [frameCount, renderFrame]);
-
-    // 4. ПОДПИСКА НА СОБЫТИЯ
+    // 4. СОБЫТИЯ И РЕСАЙЗ
     useEffect(() => {
         if (!isLoaded) return;
-
         let resizeTimeout: ReturnType<typeof setTimeout>;
 
-        // Единая функция синхронизации размеров
         const syncLayout = () => {
-            if (canvasRef.current) {
-                canvasRef.current.width = window.innerWidth;
-                canvasRef.current.height = window.innerHeight;
+            if (canvasRef.current && canvasRef.current.parentElement) {
+                // ФИКС: Берем размер родителя, а не окна!
+                const parent = canvasRef.current.parentElement;
+                canvasRef.current.width = parent.clientWidth;
+                canvasRef.current.height = parent.clientHeight;
             }
-            updateGeometry();
-            handleScroll(); // Заставляем канвас перерисовать текущий кадр в новых пропорциях
+            if (mode === 'scroll') updateGeometry();
+            renderFrame(currentFrameRef.current); // Перерисовываем текущий кадр
         };
 
         const handleResize = () => {
             clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(syncLayout, 150); // Дебаунс ресайза для производительности
+            resizeTimeout = setTimeout(syncLayout, 150);
         };
 
         window.addEventListener('resize', handleResize);
-        window.addEventListener('scroll', handleScroll, { passive: true });
+        if (mode === 'scroll')
+            window.addEventListener('scroll', handleScroll, { passive: true });
 
-        // Первичная настройка при монтировании
-        syncLayout();
+        syncLayout(); // Первичная отрисовка
 
         return () => {
             clearTimeout(resizeTimeout);
             window.removeEventListener('resize', handleResize);
-            window.removeEventListener('scroll', handleScroll);
+            if (mode === 'scroll')
+                window.removeEventListener('scroll', handleScroll);
             if (requestRef.current) cancelAnimationFrame(requestRef.current);
         };
-    }, [isLoaded, handleScroll, updateGeometry]);
+    }, [isLoaded, handleScroll, updateGeometry, renderFrame, mode]);
 
     return {
         canvasRef,
@@ -250,5 +249,6 @@ export const useCanvasSequence = ({
         isLoaded,
         loadingProgress,
         currentBreakpoint,
+        setFrame,
     };
 };

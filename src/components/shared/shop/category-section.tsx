@@ -153,17 +153,6 @@ export function CategorySection({
                         exit="collapsed"
                         className="overflow-hidden pb-5 px-2"
                     >
-                        {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10 pt-10 relative">
-                            {remainingProducts.map(product => (
-                                <motion.div
-                                    key={product.id}
-                                    variants={cardVariants}
-                                    layout
-                                >
-                                    <ProductCard product={product} />
-                                </motion.div>
-                            ))}
-                        </div> */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10 pt-10 relative">
                             {remainingProducts.map((product, index) => (
                                 <motion.div
