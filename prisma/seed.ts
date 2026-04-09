@@ -481,6 +481,167 @@ async function main() {
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
+        {
+            title: "Distressed T-Shirt 'Guardian Cat'",
+            slug: 'distressed-t-shirt-guardian-cat-02',
+            description:
+                "Кастомная серая футболка с эффектом состаривания. Портрет пушистого кота. На спине: 'Try petting it... if you survive, give it a like'.",
+            price: 12500,
+            status: ProductStatus.AVAILABLE,
+            thumbnailFront:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+            thumbnailBack:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            gallery: [
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            ],
+            size: 'L (Oversize)',
+            materials: 'Варёный хлопок, Текстильные маркеры',
+            sequenceFolder: 'cat-tshirt',
+            sequenceFrameCount: 174,
+            categoryId: createdCategories['bags'],
+        },
+        {
+            title: "Distressed T-Shirt 'Guardian Cat'",
+            slug: 'distressed-t-shirt-guardian-cat-02',
+            description:
+                "Кастомная серая футболка с эффектом состаривания. Портрет пушистого кота. На спине: 'Try petting it... if you survive, give it a like'.",
+            price: 12500,
+            status: ProductStatus.AVAILABLE,
+            thumbnailFront:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+            thumbnailBack:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            gallery: [
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            ],
+            size: 'L (Oversize)',
+            materials: 'Варёный хлопок, Текстильные маркеры',
+            sequenceFolder: 'cat-tshirt',
+            sequenceFrameCount: 174,
+            categoryId: createdCategories['bags'],
+        },
+        {
+            title: "Distressed T-Shirt 'Guardian Cat'",
+            slug: 'distressed-t-shirt-guardian-cat-02',
+            description:
+                "Кастомная серая футболка с эффектом состаривания. Портрет пушистого кота. На спине: 'Try petting it... if you survive, give it a like'.",
+            price: 12500,
+            status: ProductStatus.AVAILABLE,
+            thumbnailFront:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+            thumbnailBack:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            gallery: [
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            ],
+            size: 'L (Oversize)',
+            materials: 'Варёный хлопок, Текстильные маркеры',
+            sequenceFolder: 'cat-tshirt',
+            sequenceFrameCount: 174,
+            categoryId: createdCategories['bags'],
+        },
+        {
+            title: "Distressed T-Shirt 'Guardian Cat'",
+            slug: 'distressed-t-shirt-guardian-cat-02',
+            description:
+                "Кастомная серая футболка с эффектом состаривания. Портрет пушистого кота. На спине: 'Try petting it... if you survive, give it a like'.",
+            price: 12500,
+            status: ProductStatus.AVAILABLE,
+            thumbnailFront:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+            thumbnailBack:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            gallery: [
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            ],
+            size: 'L (Oversize)',
+            materials: 'Варёный хлопок, Текстильные маркеры',
+            sequenceFolder: 'cat-tshirt',
+            sequenceFrameCount: 174,
+            categoryId: createdCategories['bags'],
+        },
+        {
+            title: "Distressed T-Shirt 'Guardian Cat'",
+            slug: 'distressed-t-shirt-guardian-cat-02',
+            description:
+                "Кастомная серая футболка с эффектом состаривания. Портрет пушистого кота. На спине: 'Try petting it... if you survive, give it a like'.",
+            price: 12500,
+            status: ProductStatus.AVAILABLE,
+            thumbnailFront:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+            thumbnailBack:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            gallery: [
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            ],
+            size: 'L (Oversize)',
+            materials: 'Варёный хлопок, Текстильные маркеры',
+            sequenceFolder: 'cat-tshirt',
+            sequenceFrameCount: 174,
+            categoryId: createdCategories['bags'],
+        },
+        {
+            title: "Distressed T-Shirt 'Guardian Cat'",
+            slug: 'distressed-t-shirt-guardian-cat-02',
+            description:
+                "Кастомная серая футболка с эффектом состаривания. Портрет пушистого кота. На спине: 'Try petting it... if you survive, give it a like'.",
+            price: 12500,
+            status: ProductStatus.AVAILABLE,
+            thumbnailFront:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+            thumbnailBack:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            gallery: [
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            ],
+            size: 'L (Oversize)',
+            materials: 'Варёный хлопок, Текстильные маркеры',
+            sequenceFolder: 'cat-tshirt',
+            sequenceFrameCount: 174,
+            categoryId: createdCategories['bags'],
+        },
+        {
+            title: "Distressed T-Shirt 'Guardian Cat'",
+            slug: 'distressed-t-shirt-guardian-cat-02',
+            description:
+                "Кастомная серая футболка с эффектом состаривания. Портрет пушистого кота. На спине: 'Try petting it... if you survive, give it a like'.",
+            price: 12500,
+            status: ProductStatus.AVAILABLE,
+            thumbnailFront:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+            thumbnailBack:
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            gallery: [
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_front.png',
+                'https://nnmvfkxukiifiucgjdra.supabase.co/storage/v1/object/public/jane-art/shop/bags/nave/borsa_back.png',
+            ],
+            size: 'L (Oversize)',
+            materials: 'Варёный хлопок, Текстильные маркеры',
+            sequenceFolder: 'cat-tshirt',
+            sequenceFrameCount: 174,
+            categoryId: createdCategories['bags'],
+        },
         // pants
         {
             title: "Distressed T-Shirt 'Guardian Cat'",

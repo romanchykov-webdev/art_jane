@@ -9,9 +9,10 @@ export type GetMoreProductsResult =
 
 export async function getMoreProductsByCategory(
     categoryId: string,
-    skip: number = 4
+    skip: number = 4,
+    take: number = 12
 ): Promise<GetMoreProductsResult> {
-    // 1. SECURITY GUARD: Защита от неверного формата категории
+    // 1. SECURITY GUARD
     if (
         !categoryId ||
         typeof categoryId !== 'string' ||
@@ -22,7 +23,12 @@ export async function getMoreProductsByCategory(
 
     // 2. SECURITY GUARD: Защита от отрицательной пагинации и перегрузки базы
     if (typeof skip !== 'number' || skip < 0 || skip > 1000) {
-        return { success: false, error: 'Неверный параметр пагинации' };
+        return { success: false, error: 'Неверный параметр skip' };
+    }
+
+    // Защита от слишком большого take (максимум 50 за раз)
+    if (typeof take !== 'number' || take < 1 || take > 50) {
+        return { success: false, error: 'Неверный параметр take' };
     }
 
     try {
@@ -31,7 +37,7 @@ export async function getMoreProductsByCategory(
                 categoryId: categoryId,
             },
             skip: skip,
-            // take: 12,
+            take: take,
             orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
             select: {
                 id: true,
@@ -44,9 +50,7 @@ export async function getMoreProductsByCategory(
                 size: true,
                 favoriteCount: true,
                 category: {
-                    select: {
-                        name: true,
-                    },
+                    select: { name: true },
                 },
             },
         });
