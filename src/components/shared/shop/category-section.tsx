@@ -27,12 +27,12 @@ interface CategorySectionProps {
     totalAvailable: number;
 }
 
-const containerVariants = {
+const containerVariants: Variants = {
     collapsed: {
         height: 0,
         opacity: 1,
         transition: {
-            height: { duration: 0.8, ease: [0.04, 0.62, 0.23, 0.98] },
+            height: { duration: 0.8, ease: [0.04, 0.62, 0.23, 0.98] as const },
             opacity: { duration: 0.4 },
         },
     },
@@ -40,35 +40,11 @@ const containerVariants = {
         height: 'auto',
         opacity: 1,
         transition: {
-            height: { duration: 0.5, ease: [0.04, 0.62, 0.23, 0.98] },
+            height: { duration: 0.5, ease: [0.04, 0.62, 0.23, 0.98] as const },
             opacity: { duration: 0.3 },
         },
     },
 };
-
-// const containerVariants = {
-//     collapsed: {
-//         height: 0,
-//         opacity: 1,
-//         transition: {
-//             height: { duration: 0.8, ease: [0.04, 0.62, 0.23, 0.98] },
-//             opacity: { duration: 0.25 },
-//             when: 'afterChildren',
-//             staggerChildren: 0.05,
-//             staggerDirection: -1,
-//         },
-//     },
-//     expanded: {
-//         height: 'auto',
-//         opacity: 1,
-//         transition: {
-//             height: { duration: 0.7, ease: [0.04, 0.62, 0.23, 0.98] },
-//             opacity: { duration: 0.3 },
-//             when: 'beforeChildren',
-//             staggerChildren: 0.1,
-//         },
-//     },
-// };
 
 const cardVariants: Variants = {
     collapsed: { y: 20, opacity: 0, scale: 0.95 },
@@ -77,29 +53,14 @@ const cardVariants: Variants = {
         opacity: 1,
         scale: 1,
         transition: {
-            type: 'spring',
+            type: 'spring' as const,
             stiffness: 100,
             damping: 15,
-            // МАГИЯ: задержка сбрасывается для каждой новой загруженной партии
+            // задержка сбрасывается для каждой новой загруженной партии
             delay: (index % FETCH_LIMIT) * 0.1,
         },
     }),
 };
-
-// const cardVariants: Variants = {
-//     collapsed: {
-//         y: 20,
-//         opacity: 0,
-//         scale: 0.95,
-//         transition: { duration: 0.3 },
-//     },
-//     expanded: {
-//         y: 0,
-//         opacity: 1,
-//         scale: 1,
-//         transition: { type: 'spring', stiffness: 100, damping: 15 },
-//     },
-// };
 
 export function CategorySection({
     categoryId,
