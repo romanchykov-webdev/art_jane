@@ -1,4 +1,4 @@
-import { ProductSequence } from '@/components/shared/canvas/product-sequence';
+import { HeroSequence } from '@/components/shared/hero-sequence';
 import { CategorySection } from '@/components/shared/shop/category-section';
 import { StickyNav } from '@/components/shared/shop/sticky-nav';
 import { prisma } from '@/lib/prisma';
@@ -63,7 +63,11 @@ export default async function Home() {
     return (
         <>
             {/* Клиентский Canvas*/}
-            <ProductSequence
+            {/* <ProductSequence
+                folderName={sequenceFolder}
+                frameCount={sequenceFrameCount}
+            /> */}
+            <HeroSequence
                 folderName={sequenceFolder}
                 frameCount={sequenceFrameCount}
             />

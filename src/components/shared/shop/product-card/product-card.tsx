@@ -27,6 +27,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
         >
             <Link
                 href={`/product/${product.slug}`}
+                target="_blank"
                 // 2. ИЗОБРАЖЕНИЕ:
                 className="relative block aspect-3/4 overflow-hidden rounded-2xl bg-muted/50 transition-transform duration-500 group-hover:scale-[1.02]"
             >

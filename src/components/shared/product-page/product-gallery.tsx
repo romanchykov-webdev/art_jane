@@ -11,21 +11,28 @@ import {
 import Image from 'next/image';
 import { useState } from 'react';
 
+import { StorageFolder } from '@/lib/supabase-paths';
 import { cn } from '@/lib/utils';
+import { Product3DView } from './product-3d-view';
 
 interface ProductGalleryProps {
     images: string[];
     title: string;
-    hasThreeSixty?: boolean; // Флаг наличия 3D модели
+    hasThreeSixty?: boolean;
+    sequenceFolder?: StorageFolder;
+    sequenceFrameCount?: number;
 }
 
 export function ProductGallery({
     images,
     title,
-    hasThreeSixty = false, // По умолчанию false, пока не подключим Canvas
+    hasThreeSixty = false,
+    sequenceFolder,
+    sequenceFrameCount,
 }: ProductGalleryProps) {
     const [activeMode, setActiveMode] = useState<'photo' | '3d'>('photo');
     const [currentIndex, setCurrentIndex] = useState(0);
+    console.log({ sequenceFrameCount });
 
     // Стейт для мобильной подсказки "Swipe"
     const [showHint, setShowHint] = useState(true);
@@ -50,6 +57,12 @@ export function ProductGallery({
         return Math.abs(offset) * velocity;
     };
 
+    // Проверяем, доступен ли режим 3D
+    const is3dAvailable =
+        !!sequenceFolder &&
+        sequenceFrameCount !== undefined &&
+        sequenceFrameCount > 0;
+
     return (
         <div className="relative flex flex-col gap-4 w-full">
             {/* ГЛАВНЫЙ КОНТЕЙНЕР (Залипающий) */}
@@ -73,7 +86,7 @@ export function ProductGallery({
                                     drag="x"
                                     dragConstraints={{ left: 0, right: 0 }}
                                     dragElastic={0.1} // Легкая пружинистость за пальцем
-                                    onDragEnd={(e, { offset, velocity }) => {
+                                    onDragEnd={(_, { offset, velocity }) => {
                                         const swipe = swipePower(
                                             offset.x,
                                             velocity.x
@@ -119,7 +132,7 @@ export function ProductGallery({
                                                         duration: 1.5,
                                                         ease: 'easeInOut',
                                                     }}
-                                                    className="flex flex-col opacity-90 items-center gap-2 text-white drop-shadow-xl p-4 bg-black/20 backdrop-blur-md rounded-2xl"
+                                                    className="flex flex-col  items-center gap-2 text-white drop-shadow-xl p-4 bg-black/20 backdrop-blur-md rounded-2xl"
                                                 >
                                                     <MoveHorizontal className="w-8 h-8" />
                                                     <span className="font-jane uppercase tracking-widest text-xs">
@@ -173,17 +186,15 @@ export function ProductGallery({
                         </>
                     )}
 
-                    {/* РЕЖИМ: 3D (Заглушка для Canvas) */}
-                    {activeMode === '3d' && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 text-white z-10">
-                            <div className="text-center">
-                                <Box className="w-12 h-12 mx-auto mb-4 opacity-50 animate-pulse" />
-                                <p className="font-jane uppercase tracking-widest text-sm opacity-50">
-                                    Canvas 3D Engine Ready
-                                </p>
-                            </div>
-                        </div>
-                    )}
+                    {/* РЕЖИМ: 3D */}
+                    {activeMode === '3d' &&
+                        sequenceFolder &&
+                        sequenceFrameCount && (
+                            <Product3DView
+                                folderName={sequenceFolder}
+                                frameCount={sequenceFrameCount}
+                            />
+                        )}
                 </div>
 
                 {/* ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ  */}
@@ -220,11 +231,14 @@ export function ProductGallery({
 
                             <button
                                 onClick={() => setActiveMode('3d')}
+                                disabled={!is3dAvailable}
                                 className={cn(
                                     'relative z-10 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 font-jane',
                                     activeMode === '3d'
                                         ? 'text-black'
-                                        : 'text-white/70 hover:text-white'
+                                        : 'text-white/70 hover:text-white',
+                                    !is3dAvailable &&
+                                        'opacity-30 cursor-not-allowed pointer-events-none'
                                 )}
                             >
                                 <Box className="w-4 h-4" />

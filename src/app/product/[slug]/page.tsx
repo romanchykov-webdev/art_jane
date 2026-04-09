@@ -1,11 +1,27 @@
-import { ProductGallery } from '@/components/product-page/product-gallery';
+import { ProductGallery } from '@/components/shared/product-page/product-gallery';
+import { ProductCard } from '@/components/shared/shop/product-card/product-card';
 import { prisma } from '@/lib/prisma';
+import { StorageFolder } from '@/lib/supabase-paths';
 import { formatPrice } from '@/lib/utils';
+import Link from 'next/link';
+
+import { Button } from '@/components/ui/button';
+import { HomeIcon } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 // В Next.js 15 params — это Promise!
 interface ProductPageProps {
     params: Promise<{ slug: string }>;
+}
+
+// Алгоритм Фишера-Йетса для честного рандома.
+function getRandomProducts<T>(array: T[], count: number): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, count);
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
@@ -49,9 +65,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     });
 
     // Перемешиваем и берем 4 случайных
-    // const recommendedProducts = allOtherAvailableProducts
-    //     .sort(() => 0.5 - Math.random())
-    //     .slice(0, 4);
+    const recommendedProducts = getRandomProducts(allOtherAvailableProducts, 4);
 
     // 2. Собери массив изображений (пока берем превьюшки, позже добавишь поле gallery в БД)
     const productImages = [
@@ -62,13 +76,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
     return (
         <div className="container mx-auto px-4 py-12 md:py-24 max-w-7xl flex flex-col gap-24">
+            <Link href="/" className="flex items-center gap-2">
+                <Button
+                    variant="default"
+                    className="bg-amber-500 cursor-pointer"
+                    size="icon"
+                >
+                    <HomeIcon />
+                </Button>
+            </Link>
+
             {/* ГЛАВНЫЙ БЛОК: Split-Layout */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24 relative">
                 {/* ЛЕВАЯ КОЛОНКА: Галерея (Залипающая) */}
                 <ProductGallery
                     images={productImages}
                     title={product.title}
-                    hasThreeSixty={true}
+                    hasThreeSixty={true} // Можно включить жестко для теста
+                    sequenceFolder={product.sequenceFolder as StorageFolder}
+                    sequenceFrameCount={product.sequenceFrameCount}
                 />
 
                 {/* ПРАВАЯ КОЛОНКА: Контент */}
@@ -121,7 +147,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             {/* БЛОК РЕКОМЕНДАЦИЙ: Complete the look */}
-            {/* {recommendedProducts.length > 0 && (
+            {recommendedProducts.length > 0 && (
                 <section className="border-t border-border pt-16 mt-8">
                     <h2 className="text-3xl font-bold tracking-tight uppercase font-jane mb-10 text-center">
                         Complete the Look
@@ -135,7 +161,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                         ))}
                     </div>
                 </section>
-            )} */}
+            )}
         </div>
     );
 }
