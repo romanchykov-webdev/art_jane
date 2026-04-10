@@ -15,12 +15,17 @@ import {
 interface Product3DViewProps {
     folderName: StorageFolder;
     frameCount: number;
+    isActive: boolean;
 }
 
-export function Product3DView({ folderName, frameCount }: Product3DViewProps) {
-    // ВРЕМЕННЫЙ ФЛАГ ДЛЯ ТЕСТОВ (Потом можно вынести в интерфейс пропсов)
-    const isCyclic = false; //  true для бесконечного круга, false для жестких границ
+// ВРЕМЕННЫЙ ФЛАГ ДЛЯ ТЕСТОВ (Потом можно вынести в интерфейс пропсов)
+const IS_CYCLIC = false; //  true для бесконечного круга, false для жестких границ
 
+export function Product3DView({
+    folderName,
+    frameCount,
+    isActive,
+}: Product3DViewProps) {
     // 1. Получаем URL кадров
     const getFrameUrl = useCallback(
         (index: number, breakpoint: DeviceBreakpoint) => {
@@ -32,7 +37,7 @@ export function Product3DView({ folderName, frameCount }: Product3DViewProps) {
     );
 
     // 2. Инициализируем хук в режиме 'controlled' (ручное управление)
-    const { canvasRef, isLoaded, loadingProgress, setFrame } =
+    const { canvasRef, isLoaded, loadingProgress, setFrame, hasError, retry } =
         useCanvasSequence({
             frameCount,
             getFrameUrl,
@@ -49,7 +54,8 @@ export function Product3DView({ folderName, frameCount }: Product3DViewProps) {
     const handlePointerDown = (e: React.PointerEvent) => {
         isDragging.current = true;
         startX.current = e.clientX;
-        setShowHint(false); // Прячем подсказку при первом касании
+        setShowHint(false);
+        (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
     };
 
     const handlePointerMove = (e: React.PointerEvent) => {
@@ -61,7 +67,7 @@ export function Product3DView({ folderName, frameCount }: Product3DViewProps) {
         if (Math.abs(deltaX) > sensitivity) {
             const direction = deltaX > 0 ? 1 : -1;
 
-            if (isCyclic) {
+            if (IS_CYCLIC) {
                 // Цикличное вращение (0 -> 174 -> 0)
                 currentFrame.current =
                     (currentFrame.current + direction + frameCount) %
@@ -91,16 +97,21 @@ export function Product3DView({ folderName, frameCount }: Product3DViewProps) {
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
+            onPointerCancel={
+                handlePointerUp
+            } /* ФИКС: Защита от системных прерываний (звонки, свайпы ОС) */
         >
             <CanvasViewer
                 canvasRef={canvasRef}
                 isLoaded={isLoaded}
                 loadingProgress={loadingProgress}
+                hasError={hasError}
+                onRetry={retry}
             />
 
             {/* Онбординг для пользователя */}
             <AnimatePresence>
-                {isLoaded && showHint && (
+                {isLoaded && showHint && isActive && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}

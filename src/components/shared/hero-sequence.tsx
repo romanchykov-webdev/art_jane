@@ -26,7 +26,7 @@ export const HeroSequence = ({ folderName, frameCount }: HeroSequenceProps) => {
     );
 
     // 2.  хук в режиме СКРОЛЛА
-    const { canvasRef, trackRef, isLoaded, loadingProgress } =
+    const { canvasRef, trackRef, isLoaded, loadingProgress, hasError, retry } =
         useCanvasSequence({
             frameCount,
             getFrameUrl,
@@ -49,6 +49,8 @@ export const HeroSequence = ({ folderName, frameCount }: HeroSequenceProps) => {
                     canvasRef={canvasRef}
                     isLoaded={isLoaded}
                     loadingProgress={loadingProgress}
+                    hasError={hasError}
+                    onRetry={retry}
                 />
 
                 {/* Лозунг */}

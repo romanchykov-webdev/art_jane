@@ -16,19 +16,23 @@ const getDeviceBreakpoint = (width: number): DeviceBreakpoint => {
 export const useCanvasSequence = ({
     frameCount,
     getFrameUrl,
-    mode = 'scroll', // скролл для главной
+    mode = 'scroll',
 }: CanvasSequenceOptions) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const trackRef = useRef<HTMLElement | null>(null);
-    const imagesRef = useRef<HTMLImageElement[]>([]);
+    const imagesRef = useRef<(HTMLImageElement | null)[]>([]); // массив может содержать null
     const requestRef = useRef<number>(0);
-    const currentFrameRef = useRef<number>(0); // Храним текущий кадр
+    const currentFrameRef = useRef<number>(0);
 
     const isLoadedRef = useRef(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
     const [currentBreakpoint, setCurrentBreakpoint] =
         useState<DeviceBreakpoint>('desktop');
+
+    // СТЕЙТЫ ДЛЯ ОБРАБОТКИ ОШИБОК
+    const [hasError, setHasError] = useState(false);
+    const [retryKey, setRetryKey] = useState(0);
 
     const geometryRef = useRef({ offsetTop: 0, height: 0 });
 
@@ -39,6 +43,15 @@ export const useCanvasSequence = ({
             offsetTop: window.scrollY + rect.top,
             height: rect.height,
         };
+    }, []);
+
+    // Функция перезапуска
+    const retry = useCallback(() => {
+        setHasError(false);
+        setLoadingProgress(0);
+        setIsLoaded(false);
+        isLoadedRef.current = false;
+        setRetryKey(prev => prev + 1);
     }, []);
 
     // 1. ПРЕДЗАГРУЗКА
@@ -106,17 +119,18 @@ export const useCanvasSequence = ({
             const results = await Promise.allSettled(promises);
 
             if (!signal.aborted) {
-                const successfulImages = results
-                    .filter(
-                        (
-                            res
-                        ): res is PromiseFulfilledResult<HTMLImageElement> =>
-                            res.status === 'fulfilled'
-                    )
-                    .map(res => res.value);
+                // ИСПРАВЛЕНИЕ 1: Сохраняем null на месте битых кадров, чтобы не ломать индексы
+                const mappedImages = results.map(res =>
+                    res.status === 'fulfilled' ? res.value : null
+                );
 
-                if (successfulImages.length > 0) {
-                    imagesRef.current = successfulImages;
+                const validCount = mappedImages.filter(Boolean).length;
+
+                if (validCount === 0) {
+                    // Если не скачалось НИЧЕГО - выкидываем ошибку
+                    setHasError(true);
+                } else {
+                    imagesRef.current = mappedImages;
                     setCurrentBreakpoint(actualBreakpoint);
                     isLoadedRef.current = true;
                     setIsLoaded(true);
@@ -128,6 +142,7 @@ export const useCanvasSequence = ({
             if (err instanceof DOMException && err.name === 'AbortError')
                 return;
             console.error('[CanvasSequence]', err);
+            setHasError(true);
         });
 
         return () => {
@@ -135,7 +150,7 @@ export const useCanvasSequence = ({
             imagesRef.current = [];
             isLoadedRef.current = false;
         };
-    }, [frameCount, getFrameUrl]);
+    }, [frameCount, getFrameUrl, retryKey]);
 
     // 2. ДВИЖОК ОТРИСОВКИ
     const renderFrame = useCallback((index: number) => {
@@ -148,9 +163,29 @@ export const useCanvasSequence = ({
             0,
             Math.min(index, imagesRef.current.length - 1)
         );
-        currentFrameRef.current = safeIndex; // Запоминаем для ресайза
-        const img = imagesRef.current[safeIndex];
-        if (!img) return;
+        currentFrameRef.current = safeIndex;
+
+        let img = imagesRef.current[safeIndex];
+
+        //Алгоритм Nearest-Neighbor. Если кадр битый (null), ищем соседний рабочий
+        if (!img) {
+            for (let i = safeIndex - 1; i >= 0; i--) {
+                if (imagesRef.current[i]) {
+                    img = imagesRef.current[i];
+                    break;
+                }
+            }
+            if (!img) {
+                for (let i = safeIndex + 1; i < imagesRef.current.length; i++) {
+                    if (imagesRef.current[i]) {
+                        img = imagesRef.current[i];
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!img) return; // Если вообще ничего не нашли
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -172,7 +207,6 @@ export const useCanvasSequence = ({
         ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
     }, []);
 
-    // ЭКСПОРТИРУЕМ ДЛЯ РЕЖИМА 'controlled' (Свайп 360)
     const setFrame = useCallback(
         (index: number) => {
             if (requestRef.current) cancelAnimationFrame(requestRef.current);
@@ -183,7 +217,6 @@ export const useCanvasSequence = ({
         [renderFrame]
     );
 
-    // 3. СКРОЛЛ (Только для режима 'scroll')
     const handleScroll = useCallback(() => {
         if (
             !isLoadedRef.current ||
@@ -191,15 +224,12 @@ export const useCanvasSequence = ({
             mode !== 'scroll'
         )
             return;
-
         const { offsetTop, height } = geometryRef.current;
         const currentTop = offsetTop - window.scrollY;
         const windowHeight = window.innerHeight;
-
         const maxScroll = Math.max(1, height - windowHeight);
         let progress = -currentTop / maxScroll;
         progress = Math.max(0, Math.min(1, progress));
-
         const frameIndex = Math.min(
             frameCount - 1,
             Math.floor(progress * frameCount)
@@ -207,32 +237,26 @@ export const useCanvasSequence = ({
         setFrame(frameIndex);
     }, [frameCount, mode, setFrame]);
 
-    // 4. СОБЫТИЯ И РЕСАЙЗ
     useEffect(() => {
         if (!isLoaded) return;
         let resizeTimeout: ReturnType<typeof setTimeout>;
-
         const syncLayout = () => {
             if (canvasRef.current && canvasRef.current.parentElement) {
-                // ФИКС: Берем размер родителя, а не окна!
                 const parent = canvasRef.current.parentElement;
                 canvasRef.current.width = parent.clientWidth;
                 canvasRef.current.height = parent.clientHeight;
             }
             if (mode === 'scroll') updateGeometry();
-            renderFrame(currentFrameRef.current); // Перерисовываем текущий кадр
+            renderFrame(currentFrameRef.current);
         };
-
         const handleResize = () => {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(syncLayout, 150);
         };
-
         window.addEventListener('resize', handleResize);
         if (mode === 'scroll')
             window.addEventListener('scroll', handleScroll, { passive: true });
-
-        syncLayout(); // Первичная отрисовка
+        syncLayout();
 
         return () => {
             clearTimeout(resizeTimeout);
@@ -250,5 +274,7 @@ export const useCanvasSequence = ({
         loadingProgress,
         currentBreakpoint,
         setFrame,
+        hasError,
+        retry,
     };
 };
