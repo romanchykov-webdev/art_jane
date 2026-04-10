@@ -54,7 +54,7 @@ export function CardImagesComponent({
                 className={cn(
                     'object-cover transition-opacity duration-500 z-10',
                     // Картинка видна ТОЛЬКО если это её сторона И она полностью загрузилась
-                    activeSide === 'front' && isFrontLoaded
+                    activeSide === 'front' && (isFrontLoaded || priority)
                         ? 'opacity-100'
                         : 'opacity-0'
                 )}
@@ -71,7 +71,7 @@ export function CardImagesComponent({
                 className={cn(
                     'object-cover transition-opacity duration-500 absolute inset-0 z-10',
                     // Картинка видна ТОЛЬКО если это её сторона И она полностью загрузилась
-                    activeSide === 'back' && isBackLoaded
+                    activeSide === 'back' && (isBackLoaded || priority)
                         ? 'opacity-100'
                         : 'opacity-0'
                 )}
