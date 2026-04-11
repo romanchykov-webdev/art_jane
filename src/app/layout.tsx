@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 // fonts
+import { MobileFabs } from '@/components/shared/mobile-fabs';
 import { janeFont } from '@/lib/fonts';
 import { Inter } from 'next/font/google';
 
@@ -30,6 +31,7 @@ export default function RootLayout({
                 <main className="grow flex flex-col">{children}</main>
                 {/* Footer */}
                 <Toaster position="bottom-center" />
+                <MobileFabs />
             </body>
         </html>
     );

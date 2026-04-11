@@ -146,7 +146,7 @@ export function AuthDialog() {
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="relative text-muted-foreground hover:text-white transition-colors duration-300 outline-none cursor-pointer"
+                className="relative text-muted-foreground hover:text-amber-500 transition-colors duration-300 outline-none cursor-pointer"
             >
                 <User strokeWidth={1.5} className="w-5 h-5" />
             </button>
