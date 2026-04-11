@@ -1,16 +1,25 @@
 'use client';
 
 import { Heart, ShoppingCart } from 'lucide-react';
-import { useState } from 'react';
 import { AuthDialog } from '../auth-dialog';
 import { CartSheet } from '../cart-sheet';
 import { FavoriteSheet } from '../favorite-sheet';
 
-export function NavActions() {
-    // ВРЕМЕННЫЙ СТЕЙТ ДЛЯ ТЕСТА АНИМАЦИЙ
-    const [cartCount, setCartCount] = useState(0);
-    const [favCount, setFavCount] = useState(0);
+import { useHasMounted } from '@/hooks/use-has-mounted';
+import { useShopStore } from '@/store/use-shop-store';
 
+export function NavActions() {
+    // 1. Берем данные из глобального стора
+    const cart = useShopStore(state => state.cart);
+    const favorites = useShopStore(state => state.favorites);
+
+    // 2. Считаем количество товаров (ИСПРАВЛЕНО ДЛЯ 1-OF-1)
+    const cartCount = cart.length;
+    const favCount = favorites.length;
+
+    // 3. Идеальная защита от Hydration Error
+    const isMounted = useHasMounted();
+    if (!isMounted) return null;
     return (
         <div className="flex items-center gap-6 ml-auto pl-6 pr-6 border-l border-amber-300/30 snap-end shrink-0">
             {/* 1. ЛОГИН */}
@@ -21,7 +30,6 @@ export function NavActions() {
             <FavoriteSheet favCount={favCount} side="right">
                 <button
                     aria-label="Add to favorites"
-                    onClick={() => setFavCount(prev => prev + 1)} // Тестовый клик
                     className={`hidden md:flex relative transition-colors duration-300 cursor-pointer ${
                         favCount > 0
                             ? 'text-amber-500'
@@ -41,7 +49,6 @@ export function NavActions() {
             <CartSheet cartCount={cartCount}>
                 <button
                     aria-label="Add to cart"
-                    onClick={() => setCartCount(prev => prev + 1)} // Тестовый клик
                     className={`hidden md:flex relative transition-colors duration-300 cursor-pointer ${
                         cartCount > 0
                             ? 'text-amber-500'

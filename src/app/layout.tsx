@@ -30,7 +30,7 @@ export default function RootLayout({
                 {/* Header (Navbar) */}
                 <main className="grow flex flex-col">{children}</main>
                 {/* Footer */}
-                <Toaster position="bottom-center" />
+                <Toaster />
                 <MobileFabs />
             </body>
         </html>

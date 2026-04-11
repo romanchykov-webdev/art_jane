@@ -67,7 +67,10 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
                     toggleSide={toggleSide}
                 />
 
-                <CardFooterComponent isAvailable={isAvailable} />
+                <CardFooterComponent
+                    product={product}
+                    isAvailable={isAvailable}
+                />
             </div>
         </Card>
     );
