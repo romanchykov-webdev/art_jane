@@ -21,15 +21,15 @@ export function CardContentComponent({
     toggleSide,
 }: Props) {
     // Единый класс для стеклянных кнопок
-    const glassButtonClass =
-        'h-12 w-12 rounded-full cursor-pointer opacity-80 transition-all duration-300 flex items-center justify-center text-foreground bg-white/20 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-white/40 hover:opacity-100 hover:scale-105';
+    const glassButtonClass = `h-12 w-12 rounded-full cursor-pointer  transition-all duration-300
+         flex items-center justify-center text-foreground bg-gray-300 shadow-even-sm  
+         hover:bg-gray-400  hover:scale-105 hover-shadow-even-md`;
 
     return (
         <CardContent className="p-0 grow relative mb-5 px-2">
             {/* СТРЕЛКИ СЛАЙДЕРА (Стеклянные линзы) */}
-            <div className="w-full flex items-center justify-between transition-opacity duration-300 my-5">
+            <div className="w-full flex items-center justify-between transition-all duration-300 my-5">
                 <Button
-                    variant="ghost"
                     size="icon"
                     className={glassButtonClass}
                     onClick={toggleSide}
@@ -37,7 +37,6 @@ export function CardContentComponent({
                     <ChevronLeft className="size-6" />
                 </Button>
                 <Button
-                    variant="ghost"
                     size="icon"
                     className={glassButtonClass}
                     onClick={toggleSide}

@@ -5,9 +5,12 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 // Импортируем наших "детей"
-import { GlassToggle } from './glass-toggle';
+// import { GlassToggle } from './glass-toggle';
+import { GlassTabs } from '../../glass-tabs';
 import { PhotoViewer } from './photo-viewer';
 import { Product3DView } from './product-3d-view';
+
+import { Box, ImageIcon } from 'lucide-react';
 
 interface ProductGalleryProps {
     images: string[];
@@ -24,17 +27,29 @@ export function ProductGallery({
     sequenceFolder,
     sequenceFrameCount,
 }: ProductGalleryProps) {
-    // Единственные стейты, которые нужны оркестратору
-    const [activeMode, setActiveMode] = useState<'photo' | '3d'>('photo');
+    const [activeTab, setActiveTab] = useState<'photo' | '3d'>('photo');
     const [is3dInitialized, setIs3dInitialized] = useState(false);
 
     const is3dAvailable =
         !!sequenceFolder &&
         sequenceFrameCount != null &&
         sequenceFrameCount > 0;
+    const tabs = [
+        {
+            id: 'photo',
+            label: 'PHOTO', // Сделали заглавными для эстетики (как на скрине)
+            icon: <ImageIcon className="w-4 h-4" />,
+        },
+        {
+            id: '3d',
+            label: '360°', // Красивый знак градусов
+            icon: <Box className="w-4 h-4" />,
+            disabled: !is3dAvailable,
+        },
+    ];
 
     const handleToggleMode = (mode: 'photo' | '3d') => {
-        setActiveMode(mode);
+        setActiveTab(mode);
         if (mode === '3d') {
             setIs3dInitialized(true);
         }
@@ -48,7 +63,7 @@ export function ProductGallery({
                     <div
                         className={cn(
                             'absolute inset-0 transition-opacity duration-500',
-                            activeMode === 'photo'
+                            activeTab === 'photo'
                                 ? 'opacity-100 z-20'
                                 : 'opacity-0 z-0 pointer-events-none'
                         )}
@@ -61,7 +76,7 @@ export function ProductGallery({
                         <div
                             className={cn(
                                 'absolute inset-0 bg-zinc-950 transition-opacity duration-500',
-                                activeMode === '3d'
+                                activeTab === '3d'
                                     ? 'opacity-100 z-20'
                                     : 'opacity-0 z-0 pointer-events-none'
                             )}
@@ -69,7 +84,7 @@ export function ProductGallery({
                             <Product3DView
                                 folderName={sequenceFolder!}
                                 frameCount={sequenceFrameCount!}
-                                isActive={activeMode === '3d'}
+                                isActive={activeTab === '3d'}
                             />
                         </div>
                     )}
@@ -77,10 +92,11 @@ export function ProductGallery({
 
                 {/* ПЕРЕКЛЮЧАТЕЛЬ УПРАВЛЕНИЯ */}
                 {hasThreeSixty && (
-                    <GlassToggle
-                        activeMode={activeMode}
-                        is3dAvailable={is3dAvailable}
-                        onToggle={handleToggleMode}
+                    <GlassTabs
+                        tabs={tabs}
+                        activeTab={activeTab}
+                        onChange={id => handleToggleMode(id as 'photo' | '3d')}
+                        className="absolute opacity-90 -bottom-11 left-1/2 -translate-x-1/2 z-20"
                     />
                 )}
             </div>

@@ -63,10 +63,6 @@ export default async function Home() {
     return (
         <>
             {/* Клиентский Canvas*/}
-            {/* <ProductSequence
-                folderName={sequenceFolder}
-                frameCount={sequenceFrameCount}
-            /> */}
             <HeroSequence
                 folderName={sequenceFolder}
                 frameCount={sequenceFrameCount}

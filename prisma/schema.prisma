@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider   = "prisma-client-js"
   output     = "../src/generated/prisma"
@@ -25,52 +23,48 @@ enum OrderStatus {
   CANCELLED
 }
 
-
-// 3. МОДЕЛЬ ТОВАРА (Искусство 1-of-1)
+/// ==========================================
+// 2. БИЗНЕС-МОДЕЛИ 
+// ==========================================
 model Product {
   id                 String        @id @default(uuid())
   title              String
   slug               String        @unique
   description        String        @db.Text
-  price              Int           // В копейках (1500000 = 15,000.00)
+  price              Int           
   
   status             ProductStatus @default(AVAILABLE)
 
-  // ПРЕВЬЮ (Легкие изображения для списка товаров)
   thumbnailFront     String
   thumbnailBack      String
-
-  // ГАЛЕРЕЯ (Массив тяжелых фото для страницы товара)
   gallery            String[]
 
-  // ХАРАКТЕРИСТИКИ
   size               String
   materials          String?
   
-  // МЕТАДАННЫЕ ДЛЯ CANVAS ДВИЖКА
   sequenceFolder     String        
   sequenceFrameCount Int           @default(174)
 
-  // АНАЛИТИКА / ИЗБРАННОЕ
   favoriteCount      Int           @default(0)
 
-// СВЯЗИ
   categoryId         String
   category           Category      @relation(fields: [categoryId], references: [id])
   
   orderId            String?
   order              Order?        @relation(fields: [orderId], references: [id])
 
-  @@index([categoryId])
+  // СВЯЗИ ДЛЯ КОРЗИНЫ И ИЗБРАННОГО
+  favorites          Favorite[]
+  cartItems          CartItem[]
 
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
+  @@index([categoryId])
   @@index([status])
   @@index([slug])
 }
 
-// 4. МОДЕЛЬ ЗАКАЗА
 model Order {
   id               String      @id @default(uuid())
   status           OrderStatus @default(PENDING)
@@ -83,7 +77,7 @@ model Order {
   
   items            Product[]
 
-  expiresAt        DateTime?   // Для очистки брони через 15 минут
+  expiresAt        DateTime?   
 
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
@@ -91,25 +85,138 @@ model Order {
   @@index([stripeSessionId])
 }
 
-// 5. МОДЕЛЬ КАТЕГОРИИ
 model Category {
   id          String    @id @default(uuid())
-  name        String    @unique // Например: "Футболки"
-  slug        String    @unique // Например: "t-shirts"
+  name        String    @unique 
+  slug        String    @unique 
   
-  products    Product[] // Связь: в одной категории много товаров
+  products    Product[] 
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
 
-// 6. ГЛОБАЛЬНЫЕ НАСТРОЙКИ САЙТА (Singleton)
 model SiteSettings {
-  // Используем жестко заданный ID, чтобы всегда обращаться к одной и той же строке
   id                     String   @id @default("global") 
-  
   heroSequenceFolder     String   @default("sequence")
   heroSequenceFrameCount Int      @default(174)
-  
   updatedAt              DateTime @updatedAt
+}
+
+// ==========================================
+// 3. E-COMMERCE МОДЕЛИ (Гость + Авторизованный)
+// ==========================================
+
+model Favorite {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Может принадлежать пользователю
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // ИЛИ гостю (по куке)
+  guestId   String?
+
+  // Защита от дублей: один юзер/гость может лайкнуть товар только один раз
+  @@unique([productId, userId])
+  @@unique([productId, guestId])
+  
+  @@index([guestId])
+  @@index([userId])
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  guestId   String?
+
+  // Защита от дублей в корзине
+  @@unique([productId, userId])
+  @@unique([productId, guestId])
+
+  @@index([guestId])
+  @@index([userId])
+}
+
+// ==========================================
+// 4. BETTER-AUTH МОДЕЛИ 
+// ==========================================
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+
+  phone         String?   
+  address       Json?     // Json  для хранения { city: "", street: "", zip: "" }
+  
+  // Связи с нашими e-commerce таблицами
+  favorites     Favorite[]
+  cartItems     CartItem[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
 }
