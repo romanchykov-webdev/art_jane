@@ -53,7 +53,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
                 className={cn(
                     'relative z-10 -mt-5 pt-2',
                     'rounded-xl overflow-hidden',
-                    'bg-white/40 dark:bg-black/40',
+                    'bg-white/40',
                     'backdrop-blur-md',
                     'border border-white/50 dark:border-white/10',
                     'shadow-[0_8px_32px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.7)]',
@@ -67,7 +67,10 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
                     toggleSide={toggleSide}
                 />
 
-                <CardFooterComponent isAvailable={isAvailable} />
+                <CardFooterComponent
+                    product={product}
+                    isAvailable={isAvailable}
+                />
             </div>
         </Card>
     );
