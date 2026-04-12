@@ -9,7 +9,7 @@ import { ProductCardProps } from '@/types/product';
 
 import { CardContentComponent } from './card-content-component';
 import { CardFooterComponent } from './card-footer-component';
-import { CardImagesComponent } from './card-images-compoment';
+import { CardImagesComponent } from './card-images-component';
 import { ProductStatusBadge } from './product-status-badge';
 
 export function ProductCard({ product, priority = false }: ProductCardProps) {

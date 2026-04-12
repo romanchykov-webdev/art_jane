@@ -10,7 +10,7 @@ export interface ProductInfoData {
     price: number;
     description: string | null;
     size: string;
-    status: string; // 'AVAILABLE' | 'SOLD' и т.д.
+    status: string;
     category?: {
         name: string;
     } | null;
@@ -30,12 +30,8 @@ export function ProductInfo({ product }: ProductInfoProps) {
         setIsPurchasing(true);
 
         try {
-            // TODO: Здесь будет вызов API корзины или Stripe
-            // Симулируем задержку сети 1.5 секунды
+            // Симулируем задержку сети 1.5 секунды перед будущим редиректом
             await new Promise(resolve => setTimeout(resolve, 1500));
-            console.log('Redirecting to checkout for item:', product.id);
-        } catch (error) {
-            console.error('Checkout failed:', error);
         } finally {
             setIsPurchasing(false);
         }
