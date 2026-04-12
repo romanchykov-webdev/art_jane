@@ -1,11 +1,12 @@
 'use client';
 
 import { Heart, ShoppingCart } from 'lucide-react';
-import { CartSheet } from './cart-sheet';
-import { FavoriteSheet } from './favorite-sheet';
+import { CartSheet } from './sheets/cart-sheet';
+import { FavoriteSheet } from './sheets/favorite-sheet';
 
 import { useHasMounted } from '@/hooks/use-has-mounted';
 import { useShopStore } from '@/store/use-shop-store';
+import { CountBadge } from './count-badge';
 
 export function MobileFabs() {
     const cart = useShopStore(state => state.cart);
@@ -32,9 +33,11 @@ export function MobileFabs() {
                                 strokeWidth={1.5}
                                 className="w-10 h-10 fill-red-500 "
                             />
-                            <span className="absolute z-10 text-2xl text-white font-jane text-shadow-lg">
-                                {favCount}
-                            </span>
+
+                            <CountBadge
+                                count={favCount}
+                                className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-2xl text-white font-jane text-shadow-lg bg-transparent"
+                            />
                         </button>
                     </FavoriteSheet>
                 </div>
@@ -49,9 +52,11 @@ export function MobileFabs() {
                                 strokeWidth={1.5}
                                 className="w-10 h-10"
                             />
-                            <span className="absolute z-10 text-2xl text-white font-jane  text-shadow-lg">
-                                {cartCount}
-                            </span>
+
+                            <CountBadge
+                                count={cartCount}
+                                className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-2xl text-white font-jane text-shadow-lg bg-transparent"
+                            />
                         </button>
                     </CartSheet>
                 </div>

@@ -1,21 +1,14 @@
+import { StoreProduct } from '@/types/product';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export interface Product {
-    id: string;
-    name: string;
-    price: number;
-    image: string;
-    size?: string;
-}
-
 interface ShopState {
-    cart: Product[]; // quantity больше нет!
-    favorites: Product[];
+    cart: StoreProduct[];
+    favorites: StoreProduct[];
 
-    toggleCart: (product: Product) => void; // НОВОЕ
-    removeFromCart: (productId: string, size?: string) => void;
-    toggleFavorite: (product: Product) => void;
+    toggleCart: (product: StoreProduct) => void;
+    removeFromCart: (productId: string, size: string) => void;
+    toggleFavorite: (product: StoreProduct) => void;
     clearCart: () => void;
 }
 
@@ -25,7 +18,6 @@ export const useShopStore = create<ShopState>()(
             cart: [],
             favorites: [],
 
-            // ДОБАВИТЬ / УБРАТЬ ИЗ КОРЗИНЫ
             toggleCart: product => {
                 const { cart } = get();
                 const isInCart = cart.some(item => item.id === product.id);
@@ -37,7 +29,6 @@ export const useShopStore = create<ShopState>()(
                 }
             },
 
-            // УБРАТЬ ИЗ КОРЗИНЫ
             removeFromCart: (productId, size) => {
                 set({
                     cart: get().cart.filter(
@@ -45,7 +36,7 @@ export const useShopStore = create<ShopState>()(
                     ),
                 });
             },
-            // ДОБАВИТЬ / УБРАТЬ ИЗ  (ИЗБРАННОЕ)
+
             toggleFavorite: product => {
                 const { favorites } = get();
                 const isFavorite = favorites.some(
