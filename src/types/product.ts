@@ -1,5 +1,6 @@
 import { ProductStatus } from '@/generated/prisma';
 
+// 1. То, что приходит из БД (Prisma)
 export interface ProductCardData {
     id: string;
     title: string;
@@ -12,10 +13,16 @@ export interface ProductCardData {
     favoriteCount: number;
     category?: {
         name: string;
-    } | null; // Prisma может вернуть null для связей, TS требует строгости
+    } | null;
 }
 
-// 2. пропсах карточки
+// 2. То, что мы храним в Zustand
+export type StoreProduct = Pick<
+    ProductCardData,
+    'id' | 'title' | 'price' | 'size' | 'thumbnailFront'
+>;
+
+// 3. Пропсы карточки
 export interface ProductCardProps {
     product: ProductCardData;
     priority?: boolean;

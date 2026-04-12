@@ -1,12 +1,13 @@
 'use client';
 
 import { Heart, ShoppingCart } from 'lucide-react';
-import { AuthDialog } from '../auth-dialog';
-import { CartSheet } from '../cart-sheet';
-import { FavoriteSheet } from '../favorite-sheet';
+import { AuthDialog } from '../auth/auth-dialog';
+import { CartSheet } from '../sheets/cart-sheet';
+import { FavoriteSheet } from '../sheets/favorite-sheet';
 
 import { useHasMounted } from '@/hooks/use-has-mounted';
 import { useShopStore } from '@/store/use-shop-store';
+import { CountBadge } from '../count-badge';
 
 export function NavActions() {
     // 1. Берем данные из глобального стора
@@ -56,11 +57,7 @@ export function NavActions() {
                     }`}
                 >
                     <ShoppingCart strokeWidth={1.5} className="w-5 h-5" />
-                    {cartCount > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-amber-500 text-black text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-even-sm">
-                            {cartCount}
-                        </span>
-                    )}
+                    <CountBadge count={cartCount} />
                 </button>
             </CartSheet>
         </div>
