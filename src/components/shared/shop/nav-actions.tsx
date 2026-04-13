@@ -24,7 +24,6 @@ export function NavActions() {
     return (
         <div className="flex items-center gap-6 ml-auto pl-6 pr-6 border-l border-amber-300/30 snap-end shrink-0">
             {/* 1. ЛОГИН */}
-
             <AuthDialog />
 
             {/* 2. ИЗБРАННОЕ  */}
@@ -45,7 +44,6 @@ export function NavActions() {
                     )}
                 </button>
             </FavoriteSheet>
-
             {/* 3. КОРЗИНА  */}
             <CartSheet cartCount={cartCount}>
                 <button

@@ -2,6 +2,11 @@ import { prisma } from '@/lib/prisma';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 
+// console.log('--- DEBUG GOOGLE KEYS ---');
+// console.log('ID:', process.env.GOOGLE_CLIENT_ID);
+// console.log('SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'Exists' : 'MISSING');
+// console.log('-------------------------');
+
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: 'postgresql',

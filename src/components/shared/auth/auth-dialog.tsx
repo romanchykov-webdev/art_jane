@@ -2,7 +2,7 @@
 
 import { Loader2, User } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -19,12 +19,24 @@ import { GlassTabs } from '../glass-tabs';
 import { LoginForm } from './login-form';
 import { RegisterForm } from './register-form';
 
+// экшен слияния
+import { syncGuestDataToUser } from '@/actions/auth-actions';
+
 export function AuthDialog() {
     const { data: session, isPending } = useSession();
 
     const [isOpen, setIsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('login');
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+    // --- ГЛОБАЛЬНЫЙ СЛУШАТЕЛЬ СЛИЯНИЯ ---
+    // Срабатывает каждый раз, когда меняется состояние пользователя
+    useEffect(() => {
+        if (session?.user) {
+            // Запускаем в фоне без await, чтобы не блокировать UI.
+            syncGuestDataToUser().catch(console.error);
+        }
+    }, [session?.user]);
 
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
@@ -42,7 +54,7 @@ export function AuthDialog() {
 
     const handleOpenChange = (open: boolean) => {
         if (!open) {
-            setActiveTab('login'); // При закрытии сбрасываем на логин
+            setActiveTab('login');
         }
         setIsOpen(open);
     };
@@ -68,7 +80,7 @@ export function AuthDialog() {
         return (
             <Link
                 href="/profile"
-                className="relative text-white hover:text-white/80 transition-colors duration-300 outline-none block"
+                className="relative text-amber-500 hover:text-amber-500/80 transition-colors duration-300 outline-none block"
             >
                 <User strokeWidth={1.5} className="w-5 h-5" />
             </Link>
