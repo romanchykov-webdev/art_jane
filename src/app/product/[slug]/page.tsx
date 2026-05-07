@@ -1,11 +1,10 @@
 import { ProductGallery } from '@/components/shared/product-page/product-gallery/product-gallery';
 import { prisma } from '@/lib/prisma';
 import { StorageFolder } from '@/lib/supabase-paths';
-import { HomeIcon } from 'lucide-react';
-import Link from 'next/link';
 
 import { ProductInfo } from '@/components/shared/product-page/product-info';
 
+import { LogoGoHome } from '@/components/shared/logo-go-home';
 import { ProductRecommendations } from '@/components/shared/product-page/product-recommendations';
 import { Skeleton } from '@/components/ui/skeleton';
 import { notFound } from 'next/navigation';
@@ -82,14 +81,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
     return (
         <div className="container mx-auto px-4 py-12 md:py-24 max-w-7xl flex flex-col gap-24">
-            <Link
-                href="/"
-                className="w-20 h-20 flex items-center justify-center rounded-full bg-amber-500 shadow-even-md
-                 hover:bg-amber-600 transition-all duration-500 hover:shadow-even-lg
-                 "
-            >
-                <HomeIcon className="size-10" />
-            </Link>
+            <LogoGoHome classNameLogo=" items-center flex-1" />
 
             {/* ГЛАВНЫЙ БЛОК: Split-Layout */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24 relative">

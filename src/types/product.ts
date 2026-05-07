@@ -19,7 +19,7 @@ export interface ProductCardData {
 // 2. То, что мы храним в Zustand
 export type StoreProduct = Pick<
     ProductCardData,
-    'id' | 'title' | 'price' | 'size' | 'thumbnailFront'
+    'id' | 'title' | 'slug' | 'status' | 'price' | 'size' | 'thumbnailFront'
 >;
 
 // 3. Пропсы карточки

@@ -1,15 +1,34 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import 'dotenv/config';
-import { PrismaClient, ProductStatus } from '../src/generated/prisma';
+import {
+    OrderStatus,
+    PrismaClient,
+    ProductStatus,
+} from '../src/generated/prisma';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
     console.log('Cleaning up database... 🗑️');
+    // ДОБАВЛЕНО: Очистка новых таблиц
+    await prisma.cartItem.deleteMany();
+    await prisma.favorite.deleteMany();
     await prisma.order.deleteMany();
     await prisma.product.deleteMany();
     await prisma.category.deleteMany();
+    await prisma.user.deleteMany();
+
+    // ДОБАВЛЕНО: Создание тестового юзера
+    console.log('Creating test user... 👤');
+    const testUser = await prisma.user.create({
+        data: {
+            name: 'Serioga Romanchykov',
+
+            email: 'serioga.genova@gmail.com',
+            emailVerified: true,
+        },
+    });
 
     console.log('Seeding Categories... 🗂️');
 
@@ -21,6 +40,7 @@ async function main() {
         { name: 'Jackets', slug: 'jackets' },
         { name: 'Costumes', slug: 'suits' },
     ];
+    console.log('Database seeded with Categories! 🚀');
 
     const createdCategories: Record<string, string> = {};
     for (const cat of categoriesData) {
@@ -955,17 +975,68 @@ async function main() {
         },
     ];
 
+    const createdProducts = [];
     for (let i = 0; i < products.length; i++) {
         const baseSlug = products[i].slug.replace(/-\d+$/, '');
-        await prisma.product.create({
+        const created = await prisma.product.create({
             data: {
                 ...products[i],
                 slug: `${baseSlug}-${String(i + 1).padStart(2, '0')}`,
             },
         });
+        createdProducts.push(created);
     }
+    console.log('Database seeded with Products! 🚀');
 
-    console.log('Database seeded with Categories! 🚀');
+    // ==========================================
+    // ДОБАВЛЕНО: ГЕНЕРАЦИЯ ТЕСТОВЫХ СЦЕНАРИЕВ
+    // ==========================================
+    if (createdProducts.length >= 4) {
+        console.log(
+            'Setting up Test User Scenarios (Cart, Favorites, Orders)... 🧪'
+        );
+
+        // 1. Товар в Избранное
+        await prisma.favorite.create({
+            data: { userId: testUser.id, productId: createdProducts[0].id },
+        });
+
+        // 2. Товар в Корзину
+        await prisma.cartItem.create({
+            data: { userId: testUser.id, productId: createdProducts[1].id },
+        });
+
+        // 3. Успешный заказ (PAID) и смена статуса товара на SOLD
+        await prisma.product.update({
+            where: { id: createdProducts[2].id },
+            data: { status: ProductStatus.SOLD },
+        });
+        await prisma.order.create({
+            data: {
+                userId: testUser.id,
+                customerEmail: testUser.email,
+                customerName: testUser.name,
+                status: OrderStatus.PAID,
+                items: { connect: [{ id: createdProducts[2].id }] },
+            },
+        });
+
+        // 4. Заказ в ожидании (PENDING - Checkout Lock) и смена статуса на RESERVED
+        await prisma.product.update({
+            where: { id: createdProducts[3].id },
+            data: { status: ProductStatus.RESERVED },
+        });
+        await prisma.order.create({
+            data: {
+                userId: testUser.id,
+                customerEmail: testUser.email,
+                customerName: testUser.name,
+                status: OrderStatus.PENDING,
+                expiresAt: new Date(Date.now() + 15 * 60 * 1000), // + 15 минут
+                items: { connect: [{ id: createdProducts[3].id }] },
+            },
+        });
+    }
 
     console.log('Seeding Site Settings...');
     await prisma.siteSettings.upsert({

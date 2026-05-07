@@ -80,6 +80,7 @@ export function AuthDialog() {
         return (
             <Link
                 href="/profile"
+                target="_blank"
                 className="relative text-amber-500 hover:text-amber-500/80 transition-colors duration-300 outline-none block"
             >
                 <User strokeWidth={1.5} className="w-5 h-5" />
