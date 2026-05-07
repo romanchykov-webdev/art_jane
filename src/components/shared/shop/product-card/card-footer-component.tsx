@@ -30,6 +30,8 @@ export function CardFooterComponent({ product, isAvailable }: Props) {
         price: product.price,
         thumbnailFront: product.thumbnailFront,
         size: product.size,
+        slug: product.slug,
+        status: product.status,
     };
 
     const isFavorite = isMounted

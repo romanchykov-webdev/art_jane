@@ -63,6 +63,7 @@ export function CartSheet({ children, cartCount }: CartSheetProps) {
                             <SheetItemCard
                                 key={`${item.id}-${item.size}`}
                                 item={item}
+                                type="cart"
                                 onRemove={() =>
                                     removeFromCart(item.id, item.size!)
                                 }

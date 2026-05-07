@@ -1,8 +1,10 @@
 'use server';
 
+import { Product } from '@/generated/prisma';
 import { auth } from '@/lib/auth';
 import { getOrCreateGuestId } from '@/lib/guest';
 import { prisma } from '@/lib/prisma';
+import { StoreProduct } from '@/types/product';
 import { headers } from 'next/headers';
 
 // 1. УТИЛИТА: Определяем, кто делает запрос (Юзер или Гость)
@@ -81,5 +83,56 @@ export async function toggleCartAction(productId: string) {
     } catch (error) {
         console.error('[TOGGLE_CART_ERROR]', error);
         return { success: false, error: 'Failed to toggle cart item' };
+    }
+}
+
+// ==========================================
+// 4. ДОБАВЛЕНО: ЭКШЕН ЧТЕНИЯ ДЛЯ HYDRATION PIPELINE
+// ==========================================
+export async function getShopState(): Promise<{
+    cart: StoreProduct[];
+    favorites: StoreProduct[];
+}> {
+    try {
+        const { userId, guestId } = await getIdentity();
+
+        // Ищем записи либо по userId, либо по guestId
+        const whereClause = userId ? { userId } : { guestId: guestId! };
+
+        // Используем Promise.all для ПАРАЛЛЕЛЬНОГО запроса к БД (ускоряет ответ в 2 раза)
+        const [cartData, favoritesData] = await Promise.all([
+            prisma.cartItem.findMany({
+                where: whereClause,
+                include: { product: true }, // Подтягиваем связанные данные о товаре
+                orderBy: { createdAt: 'asc' }, // Сохраняем порядок добавления
+            }),
+            prisma.favorite.findMany({
+                where: whereClause,
+                include: { product: true },
+                orderBy: { createdAt: 'desc' }, // Новые лайки сверху
+            }),
+        ]);
+
+        // Утилита для маппинга тяжелой Prisma-модели в легкий клиентский StoreProduct
+        const mapToStoreProduct = (item: {
+            product: Product;
+        }): StoreProduct => ({
+            id: item.product.id,
+            title: item.product.title,
+            slug: item.product.slug,
+            status: item.product.status,
+            price: item.product.price,
+            size: item.product.size,
+            thumbnailFront: item.product.thumbnailFront,
+        });
+
+        return {
+            cart: cartData.map(mapToStoreProduct),
+            favorites: favoritesData.map(mapToStoreProduct),
+        };
+    } catch (error) {
+        console.error('[GET_SHOP_STATE_ERROR]', error);
+        // Безопасный Fallback: если БД упала, отдаем пустую корзину, чтобы не сломать весь сайт
+        return { cart: [], favorites: [] };
     }
 }
