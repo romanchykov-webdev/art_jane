@@ -14,6 +14,9 @@ interface ShopState {
     toggleFavorite: (product: StoreProduct) => Promise<void>;
     clearCart: () => void;
 
+    // Полный сброс памяти при логауте
+    resetStore: () => void;
+
     // Функция для инициализации стора данными из БД при старте
     initStore: (cart: StoreProduct[], favorites: StoreProduct[]) => void;
 }
@@ -105,6 +108,9 @@ export const useShopStore = create<ShopState>()((set, get) => ({
     },
 
     clearCart: () => set({ cart: [] }),
+
+    // Атомарный сброс обоих массивов (при логауте)
+    resetStore: () => set({ cart: [], favorites: [] }),
 
     // подмена состояния из БД
     initStore: (cart, favorites) => set({ cart, favorites }),
