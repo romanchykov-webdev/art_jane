@@ -7,6 +7,8 @@ import { prisma } from '@/lib/prisma';
 import { StoreProduct } from '@/types/product';
 import { headers } from 'next/headers';
 
+import { revalidatePath } from 'next/cache';
+
 // 1. УТИЛИТА: Определяем, кто делает запрос (Юзер или Гость)
 async function getIdentity() {
     const session = await auth.api.getSession({
@@ -37,6 +39,7 @@ export async function toggleFavoriteAction(productId: string) {
 
         if (existing) {
             await prisma.favorite.delete({ where: { id: existing.id } });
+            revalidatePath('/profile'); // Сбрасываем кэш страницы профиля
             return { success: true, action: 'removed' };
         } else {
             await prisma.favorite.create({
@@ -46,6 +49,7 @@ export async function toggleFavoriteAction(productId: string) {
                     guestId,
                 },
             });
+            revalidatePath('/profile'); // Сбрасываем кэш страницы профиля
             return { success: true, action: 'added' };
         }
     } catch (error) {
@@ -69,6 +73,7 @@ export async function toggleCartAction(productId: string) {
 
         if (existing) {
             await prisma.cartItem.delete({ where: { id: existing.id } });
+            revalidatePath('/profile'); // Сбрасываем кэш страницы профиля
             return { success: true, action: 'removed' };
         } else {
             await prisma.cartItem.create({
@@ -78,6 +83,7 @@ export async function toggleCartAction(productId: string) {
                     guestId,
                 },
             });
+            revalidatePath('/profile'); // Сбрасываем кэш страницы профиля
             return { success: true, action: 'added' };
         }
     } catch (error) {
@@ -87,7 +93,7 @@ export async function toggleCartAction(productId: string) {
 }
 
 // ==========================================
-// 4. ДОБАВЛЕНО: ЭКШЕН ЧТЕНИЯ ДЛЯ HYDRATION PIPELINE
+// 4.ЭКШЕН ЧТЕНИЯ ДЛЯ HYDRATION PIPELINE
 // ==========================================
 export async function getShopState(): Promise<{
     cart: StoreProduct[];
@@ -103,28 +109,15 @@ export async function getShopState(): Promise<{
         const [cartData, favoritesData] = await Promise.all([
             prisma.cartItem.findMany({
                 where: whereClause,
-                include: { product: true }, // Подтягиваем связанные данные о товаре
-                orderBy: { createdAt: 'asc' }, // Сохраняем порядок добавления
+                include: { product: true },
+                orderBy: { createdAt: 'asc' },
             }),
             prisma.favorite.findMany({
                 where: whereClause,
                 include: { product: true },
-                orderBy: { createdAt: 'desc' }, // Новые лайки сверху
+                orderBy: { createdAt: 'desc' },
             }),
         ]);
-
-        // Утилита для маппинга тяжелой Prisma-модели в легкий клиентский StoreProduct
-        // const mapToStoreProduct = (item: {
-        //     product: Product;
-        // }): StoreProduct => ({
-        //     id: item.product.id,
-        //     title: item.product.title,
-        //     slug: item.product.slug,
-        //     status: item.product.status,
-        //     price: item.product.price,
-        //     size: item.product.size,
-        //     thumbnailFront: item.product.thumbnailFront,
-        // });
 
         return {
             cart: cartData.map(mapToStoreProduct),
