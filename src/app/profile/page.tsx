@@ -10,8 +10,10 @@ import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 import { EmptyTabState } from '@/components/shared/profile/empty-tab-state';
 import { OrderCard } from '@/components/shared/profile/order-card';
 import { ProfileHeader } from '@/components/shared/profile/profile-header';
-import { ProfileItemCard } from '@/components/shared/profile/profile-item-card';
 import { TabTriggerItem } from '@/components/shared/profile/tab-trigger-item';
+
+import { AnimatedProfileList } from '@/components/shared/profile/animated-profile-list';
+import { mapToStoreProduct } from '@/lib/mappers';
 
 export default async function ProfilePage() {
     // 1. Проверка сессии на сервере
@@ -38,8 +40,9 @@ export default async function ProfilePage() {
 
     if (!userData) redirect('/');
 
-    const favoriteProducts = userData.favorites.map(f => f.product);
-    const cartProducts = userData.cartItems.map(c => c.product);
+    // 2. Превращаем тяжелые ответы Prisma в легкие StoreProduct
+    const mappedFavorites = userData.favorites.map(mapToStoreProduct);
+    const mappedCartItems = userData.cartItems.map(mapToStoreProduct);
     const orders = userData.orders;
 
     return (
@@ -59,12 +62,12 @@ export default async function ProfilePage() {
                     <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 bg-white/5 border border-white/10 p-1 rounded-2xl h-auto md:h-16 mb-8 gap-1 md:gap-0">
                         {/* ИЗБРАННОЕ */}
                         <TabTriggerItem value="collection">
-                            MY COLLECTION ({favoriteProducts.length})
+                            MY COLLECTION ({mappedFavorites.length})
                         </TabTriggerItem>
 
                         {/* КОРЗИНА */}
                         <TabTriggerItem value="reservations">
-                            RESERVATIONS ({cartProducts.length})
+                            RESERVATIONS ({mappedCartItems.length})
                         </TabTriggerItem>
 
                         {/* ИСТОРИЯ ЗАКАЗОВ */}
@@ -75,20 +78,11 @@ export default async function ProfilePage() {
 
                     {/* ИЗБРАННОЕ */}
                     <TabsContent value="collection" className="space-y-6">
-                        {favoriteProducts.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {favoriteProducts.map(item => (
-                                    <div
-                                        key={item.id}
-                                        // className="p-4 bg-transparent border border-white/10 rounded-2xl"
-                                    >
-                                        <ProfileItemCard
-                                            item={item}
-                                            type="favorite"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
+                        {mappedFavorites.length > 0 ? (
+                            <AnimatedProfileList
+                                type="favorite"
+                                initialItems={mappedFavorites}
+                            />
                         ) : (
                             <EmptyTabState
                                 icon={
@@ -101,20 +95,11 @@ export default async function ProfilePage() {
 
                     {/* КОРЗИНА */}
                     <TabsContent value="reservations" className="space-y-6">
-                        {cartProducts.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {cartProducts.map(item => (
-                                    <div
-                                        key={item.id}
-                                        // className="p-4 bg-transparent border border-white/10 rounded-2xl"
-                                    >
-                                        <ProfileItemCard
-                                            item={item}
-                                            type="cart"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
+                        {mappedCartItems.length > 0 ? (
+                            <AnimatedProfileList
+                                type="cart"
+                                initialItems={mappedCartItems}
+                            />
                         ) : (
                             <EmptyTabState
                                 icon={
