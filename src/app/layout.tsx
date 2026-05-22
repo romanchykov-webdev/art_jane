@@ -9,6 +9,7 @@ import { Inter } from 'next/font/google';
 
 // Импорты для Hydration Pipeline
 import { getShopState } from '@/actions/shop-actions';
+import { GuestSyncBridge } from '@/components/shared/guest-sync-bridge';
 import { StoreInitializer } from '@/components/shared/store-initializer';
 
 const inter = Inter({
@@ -35,6 +36,9 @@ export default async function RootLayout({
             >
                 {/* ДОБАВЛЕНО: Невидимый клиентский мост заливает данные в Zustand */}
                 <StoreInitializer cart={cart} favorites={favorites} />
+
+                {/* ДОБАВЛЕНО: Глобальный слушатель слияния */}
+                <GuestSyncBridge />
                 {/* Header (Navbar) */}
                 <main className="grow flex flex-col">{children}</main>
                 {/* Footer */}

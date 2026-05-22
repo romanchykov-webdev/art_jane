@@ -1,8 +1,8 @@
 'use server';
 
-import { Product } from '@/generated/prisma';
 import { auth } from '@/lib/auth';
 import { getOrCreateGuestId } from '@/lib/guest';
+import { mapToStoreProduct } from '@/lib/mappers';
 import { prisma } from '@/lib/prisma';
 import { StoreProduct } from '@/types/product';
 import { headers } from 'next/headers';
@@ -114,17 +114,17 @@ export async function getShopState(): Promise<{
         ]);
 
         // Утилита для маппинга тяжелой Prisma-модели в легкий клиентский StoreProduct
-        const mapToStoreProduct = (item: {
-            product: Product;
-        }): StoreProduct => ({
-            id: item.product.id,
-            title: item.product.title,
-            slug: item.product.slug,
-            status: item.product.status,
-            price: item.product.price,
-            size: item.product.size,
-            thumbnailFront: item.product.thumbnailFront,
-        });
+        // const mapToStoreProduct = (item: {
+        //     product: Product;
+        // }): StoreProduct => ({
+        //     id: item.product.id,
+        //     title: item.product.title,
+        //     slug: item.product.slug,
+        //     status: item.product.status,
+        //     price: item.product.price,
+        //     size: item.product.size,
+        //     thumbnailFront: item.product.thumbnailFront,
+        // });
 
         return {
             cart: cartData.map(mapToStoreProduct),

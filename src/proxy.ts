@@ -1,7 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-export function middleware(request: NextRequest) {
+// БЫЛО: export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     // 1. Создаем базовый ответ, который позволяет запросу идти дальше
     const response = NextResponse.next();
 
@@ -26,7 +27,7 @@ export function middleware(request: NextRequest) {
     return response;
 }
 
-// 4. Оптимизация: указываем, где Middleware НЕ должен работать
+// 4. Оптимизация: указываем, где Proxy НЕ должен работать
 export const config = {
     matcher: [
         /*
