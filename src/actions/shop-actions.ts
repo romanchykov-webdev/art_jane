@@ -28,7 +28,6 @@ export async function toggleFavoriteAction(productId: string) {
     try {
         const { userId, guestId } = await getIdentity();
 
-        // Формируем строгий запрос по уникальным составным ключам
         const whereClause = userId
             ? { productId_userId: { productId, userId } }
             : { productId_guestId: { productId, guestId: guestId! } };
@@ -39,7 +38,7 @@ export async function toggleFavoriteAction(productId: string) {
 
         if (existing) {
             await prisma.favorite.delete({ where: { id: existing.id } });
-            revalidatePath('/profile'); // Сбрасываем кэш страницы профиля
+            revalidatePath('/profile');
             return { success: true, action: 'removed' };
         } else {
             await prisma.favorite.create({
@@ -49,10 +48,17 @@ export async function toggleFavoriteAction(productId: string) {
                     guestId,
                 },
             });
-            revalidatePath('/profile'); // Сбрасываем кэш страницы профиля
+            revalidatePath('/profile');
             return { success: true, action: 'added' };
         }
-    } catch (error) {
+    } catch (error: any) {
+        // Пропускаем внутренние сигналы Next.js
+        if (
+            error?.digest === 'DYNAMIC_SERVER_USAGE' ||
+            error?.message === 'NEXT_REDIRECT'
+        ) {
+            throw error;
+        }
         console.error('[TOGGLE_FAVORITE_ERROR]', error);
         return { success: false, error: 'Failed to toggle favorite' };
     }
@@ -73,7 +79,7 @@ export async function toggleCartAction(productId: string) {
 
         if (existing) {
             await prisma.cartItem.delete({ where: { id: existing.id } });
-            revalidatePath('/profile'); // Сбрасываем кэш страницы профиля
+            revalidatePath('/profile');
             return { success: true, action: 'removed' };
         } else {
             await prisma.cartItem.create({
@@ -83,17 +89,24 @@ export async function toggleCartAction(productId: string) {
                     guestId,
                 },
             });
-            revalidatePath('/profile'); // Сбрасываем кэш страницы профиля
+            revalidatePath('/profile');
             return { success: true, action: 'added' };
         }
-    } catch (error) {
+    } catch (error: any) {
+        // Пропускаем внутренние сигналы Next.js
+        if (
+            error?.digest === 'DYNAMIC_SERVER_USAGE' ||
+            error?.message === 'NEXT_REDIRECT'
+        ) {
+            throw error;
+        }
         console.error('[TOGGLE_CART_ERROR]', error);
         return { success: false, error: 'Failed to toggle cart item' };
     }
 }
 
 // ==========================================
-// 4.ЭКШЕН ЧТЕНИЯ ДЛЯ HYDRATION PIPELINE
+// 4. ЭКШЕН ЧТЕНИЯ ДЛЯ HYDRATION PIPELINE
 // ==========================================
 export async function getShopState(): Promise<{
     cart: StoreProduct[];
@@ -102,10 +115,8 @@ export async function getShopState(): Promise<{
     try {
         const { userId, guestId } = await getIdentity();
 
-        // Ищем записи либо по userId, либо по guestId
         const whereClause = userId ? { userId } : { guestId: guestId! };
 
-        // Используем Promise.all для ПАРАЛЛЕЛЬНОГО запроса к БД (ускоряет ответ в 2 раза)
         const [cartData, favoritesData] = await Promise.all([
             prisma.cartItem.findMany({
                 where: whereClause,
@@ -123,9 +134,15 @@ export async function getShopState(): Promise<{
             cart: cartData.map(mapToStoreProduct),
             favorites: favoritesData.map(mapToStoreProduct),
         };
-    } catch (error) {
+    } catch (error: any) {
+        // Пропускаем внутренние сигналы Next.js
+        if (
+            error?.digest === 'DYNAMIC_SERVER_USAGE' ||
+            error?.message === 'NEXT_REDIRECT'
+        ) {
+            throw error;
+        }
         console.error('[GET_SHOP_STATE_ERROR]', error);
-        // Безопасный Fallback: если БД упала, отдаем пустую корзину, чтобы не сломать весь сайт
         return { cart: [], favorites: [] };
     }
 }
