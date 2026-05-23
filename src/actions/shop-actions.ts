@@ -2,8 +2,12 @@
 
 import { auth } from '@/lib/auth';
 import { getOrCreateGuestId } from '@/lib/guest';
+import { mapToStoreProduct } from '@/lib/mappers';
 import { prisma } from '@/lib/prisma';
+import { StoreProduct } from '@/types/product';
 import { headers } from 'next/headers';
+
+import { revalidatePath } from 'next/cache';
 
 // 1. УТИЛИТА: Определяем, кто делает запрос (Юзер или Гость)
 async function getIdentity() {
@@ -24,7 +28,6 @@ export async function toggleFavoriteAction(productId: string) {
     try {
         const { userId, guestId } = await getIdentity();
 
-        // Формируем строгий запрос по уникальным составным ключам
         const whereClause = userId
             ? { productId_userId: { productId, userId } }
             : { productId_guestId: { productId, guestId: guestId! } };
@@ -35,6 +38,7 @@ export async function toggleFavoriteAction(productId: string) {
 
         if (existing) {
             await prisma.favorite.delete({ where: { id: existing.id } });
+            revalidatePath('/profile');
             return { success: true, action: 'removed' };
         } else {
             await prisma.favorite.create({
@@ -44,9 +48,17 @@ export async function toggleFavoriteAction(productId: string) {
                     guestId,
                 },
             });
+            revalidatePath('/profile');
             return { success: true, action: 'added' };
         }
-    } catch (error) {
+    } catch (error: any) {
+        // Пропускаем внутренние сигналы Next.js
+        if (
+            error?.digest === 'DYNAMIC_SERVER_USAGE' ||
+            error?.message === 'NEXT_REDIRECT'
+        ) {
+            throw error;
+        }
         console.error('[TOGGLE_FAVORITE_ERROR]', error);
         return { success: false, error: 'Failed to toggle favorite' };
     }
@@ -67,6 +79,7 @@ export async function toggleCartAction(productId: string) {
 
         if (existing) {
             await prisma.cartItem.delete({ where: { id: existing.id } });
+            revalidatePath('/profile');
             return { success: true, action: 'removed' };
         } else {
             await prisma.cartItem.create({
@@ -76,10 +89,60 @@ export async function toggleCartAction(productId: string) {
                     guestId,
                 },
             });
+            revalidatePath('/profile');
             return { success: true, action: 'added' };
         }
-    } catch (error) {
+    } catch (error: any) {
+        // Пропускаем внутренние сигналы Next.js
+        if (
+            error?.digest === 'DYNAMIC_SERVER_USAGE' ||
+            error?.message === 'NEXT_REDIRECT'
+        ) {
+            throw error;
+        }
         console.error('[TOGGLE_CART_ERROR]', error);
         return { success: false, error: 'Failed to toggle cart item' };
+    }
+}
+
+// ==========================================
+// 4. ЭКШЕН ЧТЕНИЯ ДЛЯ HYDRATION PIPELINE
+// ==========================================
+export async function getShopState(): Promise<{
+    cart: StoreProduct[];
+    favorites: StoreProduct[];
+}> {
+    try {
+        const { userId, guestId } = await getIdentity();
+
+        const whereClause = userId ? { userId } : { guestId: guestId! };
+
+        const [cartData, favoritesData] = await Promise.all([
+            prisma.cartItem.findMany({
+                where: whereClause,
+                include: { product: true },
+                orderBy: { createdAt: 'asc' },
+            }),
+            prisma.favorite.findMany({
+                where: whereClause,
+                include: { product: true },
+                orderBy: { createdAt: 'desc' },
+            }),
+        ]);
+
+        return {
+            cart: cartData.map(mapToStoreProduct),
+            favorites: favoritesData.map(mapToStoreProduct),
+        };
+    } catch (error: any) {
+        // Пропускаем внутренние сигналы Next.js
+        if (
+            error?.digest === 'DYNAMIC_SERVER_USAGE' ||
+            error?.message === 'NEXT_REDIRECT'
+        ) {
+            throw error;
+        }
+        console.error('[GET_SHOP_STATE_ERROR]', error);
+        return { cart: [], favorites: [] };
     }
 }

@@ -69,10 +69,15 @@ model Order {
   id               String      @id @default(uuid())
   status           OrderStatus @default(PENDING)
   
+  // Данные для гостя
   customerEmail    String?
   customerName     String?
   customerAddress  Json?       
   
+  // Связь с авторизованным пользователем
+  userId           String?
+  user             User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
   stripeSessionId  String?     @unique
   
   items            Product[]
@@ -83,6 +88,7 @@ model Order {
   updatedAt        DateTime    @updatedAt
 
   @@index([stripeSessionId])
+  @@index([userId]) //Индекс для быстрого поиска заказов юзера
 }
 
 model Category {
@@ -169,9 +175,12 @@ model User {
   phone         String?   
   address       Json?     // Json  для хранения { city: "", street: "", zip: "" }
   
-  // Связи с нашими e-commerce таблицами
+  //Связи с e-commerce таблицами
   favorites     Favorite[]
   cartItems     CartItem[]
+  
+  //История заказов пользователя
+  orders        Order[]
 
   @@map("user")
 }

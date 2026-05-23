@@ -29,7 +29,6 @@ export function StickyNav({ categories }: { categories: Category[] }) {
                 const section = document.getElementById(category.slug);
                 if (!section) continue;
 
-                // Если верхняя граница секции пересекла нашу "линию видимости"
                 if (section.offsetTop <= scrollPosition) {
                     currentActive = category.slug;
                 }

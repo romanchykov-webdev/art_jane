@@ -2,7 +2,7 @@
 
 import { Loader2, User } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -19,24 +19,12 @@ import { GlassTabs } from '../glass-tabs';
 import { LoginForm } from './login-form';
 import { RegisterForm } from './register-form';
 
-// экшен слияния
-import { syncGuestDataToUser } from '@/actions/auth-actions';
-
 export function AuthDialog() {
     const { data: session, isPending } = useSession();
 
     const [isOpen, setIsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('login');
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-
-    // --- ГЛОБАЛЬНЫЙ СЛУШАТЕЛЬ СЛИЯНИЯ ---
-    // Срабатывает каждый раз, когда меняется состояние пользователя
-    useEffect(() => {
-        if (session?.user) {
-            // Запускаем в фоне без await, чтобы не блокировать UI.
-            syncGuestDataToUser().catch(console.error);
-        }
-    }, [session?.user]);
 
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
@@ -80,6 +68,7 @@ export function AuthDialog() {
         return (
             <Link
                 href="/profile"
+                // target="_blank"
                 className="relative text-amber-500 hover:text-amber-500/80 transition-colors duration-300 outline-none block"
             >
                 <User strokeWidth={1.5} className="w-5 h-5" />
@@ -97,7 +86,7 @@ export function AuthDialog() {
             </button>
 
             <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-                <DialogContent className="sm:max-w-[420px] p-1 !bg-black/20 backdrop-blur-md border-white/10 shadow-2xl !rounded-3xl text-white">
+                <DialogContent className="sm:max-w-[420px] p-1 bg-black/20! backdrop-blur-md border-white/10 shadow-2xl rounded-3xl! text-white">
                     <div className="p-6 bg-black/20 backdrop-blur-md rounded-[20px] border border-white/10 shadow-inner flex flex-col gap-4">
                         <DialogHeader>
                             <DialogTitle className="text-3xl font-jane tracking-wider text-center text-white">

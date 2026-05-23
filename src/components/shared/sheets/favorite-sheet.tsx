@@ -66,6 +66,8 @@ export function FavoriteSheet({
                         </div>
                     ) : (
                         favorites.map(item => {
+                            // ДОБАВЛЕНО: Защита от Race Conditions
+                            const isAvailable = item.status === 'AVAILABLE';
                             const isInCart = cart.some(
                                 cartItem => cartItem.id === item.id
                             );
@@ -74,26 +76,39 @@ export function FavoriteSheet({
                                 <SheetItemCard
                                     key={`${item.id}-${item.size}`}
                                     item={item}
+                                    type="favorite"
                                     onRemove={() => toggleFavorite(item)}
                                     actionSlot={
-                                        <Button
-                                            size="sm"
-                                            onClick={() => toggleCart(item)}
-                                            variant={
-                                                isInCart
-                                                    ? 'secondary'
-                                                    : 'default'
-                                            }
-                                            className={`rounded-full font-jane text-xs tracking-wider transition-colors h-8 px-4 ${
-                                                isInCart
-                                                    ? 'bg-white/20 text-white hover:bg-rose-500 hover:text-white'
-                                                    : 'bg-white text-black hover:bg-white/90'
-                                            }`}
-                                        >
-                                            {isInCart
-                                                ? 'REMOVE'
-                                                : 'ADD TO CART'}
-                                        </Button>
+                                        !isAvailable ? (
+                                            <Button
+                                                size="sm"
+                                                disabled
+                                                className="rounded-full font-jane text-xs tracking-wider transition-colors h-8 px-4 bg-white/20 text-white opacity-50 cursor-not-allowed"
+                                            >
+                                                {item.status === 'SOLD'
+                                                    ? 'SOLD OUT'
+                                                    : 'RESERVED'}
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                onClick={() => toggleCart(item)}
+                                                variant={
+                                                    isInCart
+                                                        ? 'secondary'
+                                                        : 'default'
+                                                }
+                                                className={`rounded-full font-jane text-xs tracking-wider transition-colors h-8 px-4 ${
+                                                    isInCart
+                                                        ? 'bg-white/20 text-white hover:bg-rose-500 hover:text-white'
+                                                        : 'bg-white text-black hover:bg-white/90'
+                                                }`}
+                                            >
+                                                {isInCart
+                                                    ? 'REMOVE'
+                                                    : 'ADD TO CART'}
+                                            </Button>
+                                        )
                                     }
                                 />
                             );

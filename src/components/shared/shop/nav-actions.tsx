@@ -10,15 +10,15 @@ import { useShopStore } from '@/store/use-shop-store';
 import { CountBadge } from '../count-badge';
 
 export function NavActions() {
-    // 1. Берем данные из глобального стора
+    // 1. Данные из глобального стора
     const cart = useShopStore(state => state.cart);
     const favorites = useShopStore(state => state.favorites);
 
-    // 2. Считаем количество товаров (ИСПРАВЛЕНО ДЛЯ 1-OF-1)
+    // 2. Количество товаров
     const cartCount = cart.length;
     const favCount = favorites.length;
 
-    // 3. Идеальная защита от Hydration Error
+    // 3. Защита от Hydration Error
     const isMounted = useHasMounted();
     if (!isMounted) return null;
     return (

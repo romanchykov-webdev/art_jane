@@ -8,6 +8,7 @@ import {
     StorageFolder,
 } from '@/lib/supabase-paths';
 import { useCallback } from 'react';
+import { Logo } from './logo';
 
 interface HeroSequenceProps {
     folderName: StorageFolder;
@@ -38,11 +39,10 @@ export const HeroSequence = ({ folderName, frameCount }: HeroSequenceProps) => {
         <section ref={trackRef} className="relative w-full h-[400vh]">
             <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col items-center justify-center">
                 {/* Логотип  */}
-                <div className="absolute top-4 md:top-8 left-0 right-0 z-20 flex justify-center pointer-events-none">
-                    <span className="text-2xl font-black tracking-widest text-zinc-800 uppercase text-shadow-lg/30 font-jane">
-                        Jane Art
-                    </span>
-                </div>
+                <Logo
+                    className="absolute left-0 right-0 top-4 md:top-8"
+                    size="lg"
+                />
 
                 {/* КАНВАС */}
                 <CanvasViewer
