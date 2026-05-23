@@ -9,6 +9,16 @@ import { headers } from 'next/headers';
 
 import { revalidatePath } from 'next/cache';
 
+type NextInternalError = Error & { digest?: string };
+
+function isNextInternalError(error: unknown): error is NextInternalError {
+    if (!(error instanceof Error)) return false;
+    const digest = (error as NextInternalError).digest;
+    return (
+        digest === 'DYNAMIC_SERVER_USAGE' || error.message === 'NEXT_REDIRECT'
+    );
+}
+
 // 1. УТИЛИТА: Определяем, кто делает запрос (Юзер или Гость)
 async function getIdentity() {
     const session = await auth.api.getSession({
@@ -51,14 +61,8 @@ export async function toggleFavoriteAction(productId: string) {
             revalidatePath('/profile');
             return { success: true, action: 'added' };
         }
-    } catch (error: any) {
-        // Пропускаем внутренние сигналы Next.js
-        if (
-            error?.digest === 'DYNAMIC_SERVER_USAGE' ||
-            error?.message === 'NEXT_REDIRECT'
-        ) {
-            throw error;
-        }
+    } catch (error) {
+        if (isNextInternalError(error)) throw error;
         console.error('[TOGGLE_FAVORITE_ERROR]', error);
         return { success: false, error: 'Failed to toggle favorite' };
     }
@@ -92,14 +96,8 @@ export async function toggleCartAction(productId: string) {
             revalidatePath('/profile');
             return { success: true, action: 'added' };
         }
-    } catch (error: any) {
-        // Пропускаем внутренние сигналы Next.js
-        if (
-            error?.digest === 'DYNAMIC_SERVER_USAGE' ||
-            error?.message === 'NEXT_REDIRECT'
-        ) {
-            throw error;
-        }
+    } catch (error) {
+        if (isNextInternalError(error)) throw error;
         console.error('[TOGGLE_CART_ERROR]', error);
         return { success: false, error: 'Failed to toggle cart item' };
     }
@@ -134,14 +132,8 @@ export async function getShopState(): Promise<{
             cart: cartData.map(mapToStoreProduct),
             favorites: favoritesData.map(mapToStoreProduct),
         };
-    } catch (error: any) {
-        // Пропускаем внутренние сигналы Next.js
-        if (
-            error?.digest === 'DYNAMIC_SERVER_USAGE' ||
-            error?.message === 'NEXT_REDIRECT'
-        ) {
-            throw error;
-        }
+    } catch (error) {
+        if (isNextInternalError(error)) throw error;
         console.error('[GET_SHOP_STATE_ERROR]', error);
         return { cart: [], favorites: [] };
     }
