@@ -1,7 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-// БЫЛО: export function middleware(request: NextRequest) {
 export function proxy(request: NextRequest) {
     // 1. Создаем базовый ответ, который позволяет запросу идти дальше
     const response = NextResponse.next();

@@ -7,7 +7,6 @@ import { prisma } from '@/lib/prisma';
 import { StoreProduct } from '@/types/product';
 import { headers } from 'next/headers';
 
-// Строго типизируем ответ экшена
 export type SyncResult =
     | {
           success: true;
@@ -49,7 +48,7 @@ export async function syncGuestDataToUser(): Promise<SyncResult> {
                 }),
             ]);
 
-            // Set для мгновенного O(1) поиска
+            // Set для мгновенного поиска
             const userCartProductIds = new Set(
                 userCartItems.map(item => item.productId)
             );
@@ -66,7 +65,6 @@ export async function syncGuestDataToUser(): Promise<SyncResult> {
                 }
             }
 
-            // Массовое выполнение (2 запроса вместо 20)
             if (cartIdsToDelete.length > 0) {
                 await tx.cartItem.deleteMany({
                     where: { id: { in: cartIdsToDelete } },
@@ -136,7 +134,6 @@ export async function syncGuestDataToUser(): Promise<SyncResult> {
             }),
         ]);
 
-        // 6. Возвращаем строго типизированные данные
         return {
             success: true,
             data: {

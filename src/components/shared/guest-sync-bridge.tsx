@@ -11,7 +11,6 @@ export function GuestSyncBridge() {
     const { data: session, isPending } = useSession();
     const router = useRouter();
 
-    // Мутексы (locks) для защиты от состояния гонки и двойного рендера (React Strict Mode)
     const hasSyncedRef = useRef(false);
     const lastUserIdRef = useRef<string | null>(null);
 
@@ -21,8 +20,7 @@ export function GuestSyncBridge() {
 
         const currentUserId = session.user.id;
 
-        // 2. Идемпотентность: если мы уже синхронизировали ЭТОГО юзера, ничего не делаем.
-        // Это защищает БД от спама при любом случайном ре-рендере компонента.
+        // 2. Если мы уже синхронизировали ЭТОГО юзера, ничего не делаем.
         if (hasSyncedRef.current && lastUserIdRef.current === currentUserId) {
             return;
         }

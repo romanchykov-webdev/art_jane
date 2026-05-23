@@ -26,9 +26,6 @@ export function AuthDialog() {
     const [activeTab, setActiveTab] = useState('login');
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-    // Удален старый useEffect с syncGuestDataToUser.
-    // Теперь за синхронизацию отвечает изолированный <GuestSyncBridge /> в layout.tsx
-
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         try {
@@ -89,7 +86,7 @@ export function AuthDialog() {
             </button>
 
             <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-                <DialogContent className="sm:max-w-[420px] p-1 !bg-black/20 backdrop-blur-md border-white/10 shadow-2xl !rounded-3xl text-white">
+                <DialogContent className="sm:max-w-[420px] p-1 bg-black/20! backdrop-blur-md border-white/10 shadow-2xl rounded-3xl! text-white">
                     <div className="p-6 bg-black/20 backdrop-blur-md rounded-[20px] border border-white/10 shadow-inner flex flex-col gap-4">
                         <DialogHeader>
                             <DialogTitle className="text-3xl font-jane tracking-wider text-center text-white">

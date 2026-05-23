@@ -57,10 +57,8 @@ export function AnimatedProfileList({
     }
 
     return (
-        // Используем твою текущую сетку карточек
         <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* mode="popLayout" - критически важно! Удаляемый элемент мгновенно "вырывается" из потока (absolute),
-                позволяя нижним карточкам плавно скользить наверх, пока текущая исчезает */}
+            {/* mode="popLayout" - позволяя нижним карточкам плавно скользить наверх, пока текущая исчезает */}
             <AnimatePresence mode="popLayout" initial={false}>
                 {optimisticItems.map(item => (
                     <motion.div
