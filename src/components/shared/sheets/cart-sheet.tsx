@@ -64,9 +64,7 @@ export function CartSheet({ children, cartCount }: CartSheetProps) {
                                 key={`${item.id}-${item.size}`}
                                 item={item}
                                 type="cart"
-                                onRemove={() =>
-                                    removeFromCart(item.id, item.size!)
-                                }
+                                onRemove={() => removeFromCart(item.id)}
                             />
                         ))
                     )}

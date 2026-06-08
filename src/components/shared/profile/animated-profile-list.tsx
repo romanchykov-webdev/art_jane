@@ -32,15 +32,13 @@ export function AnimatedProfileList({
             try {
                 removeOptimisticItem(item.id);
 
+                // Обязательно дёргаем Zustand, чтобы обновились бейджики в шапке сайта
                 if (type === 'favorite') {
-                    await useShopStore.getState().toggleFavorite(item);
+                    await useShopStore.getState().removeFromFavorites(item.id);
                 } else {
-                    await useShopStore
-                        .getState()
-                        .removeFromCart(item.id, item.size || '');
+                    await useShopStore.getState().removeFromCart(item.id);
                 }
 
-                // 3. Сервер обновил БД и сбросил кэш. Запрашиваем свежий HTML страницы в фоне.
                 router.refresh();
             } catch (error) {
                 console.error('[ANIMATED_LIST_REMOVE_ERROR]', error);
@@ -58,17 +56,16 @@ export function AnimatedProfileList({
 
     return (
         <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* mode="popLayout" - позволяя нижним карточкам плавно скользить наверх, пока текущая исчезает */}
             <AnimatePresence mode="popLayout" initial={false}>
                 {optimisticItems.map(item => (
                     <motion.div
                         key={item.id}
-                        layout // Анимация плавного перемещения в сетке
+                        layout
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.85 }}
                         transition={{ duration: 0.25, ease: 'easeOut' }}
-                        className="w-full" // Защита от схлопывания ширины при popLayout
+                        className="w-full"
                     >
                         <ProfileItemCard
                             item={item}

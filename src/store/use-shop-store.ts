@@ -1,23 +1,17 @@
-import { StoreProduct } from '@/types/product';
-import { create } from 'zustand';
-
-// серверные экшены
 import { toggleCartAction, toggleFavoriteAction } from '@/actions/shop-actions';
+import { StoreProduct } from '@/types/product';
 import { toast } from 'sonner';
+import { create } from 'zustand';
 
 interface ShopState {
     cart: StoreProduct[];
     favorites: StoreProduct[];
-
     toggleCart: (product: StoreProduct) => Promise<void>;
-    removeFromCart: (productId: string, size: string) => Promise<void>;
+    removeFromCart: (productId: string) => Promise<void>;
     toggleFavorite: (product: StoreProduct) => Promise<void>;
+    removeFromFavorites: (productId: string) => Promise<void>;
     clearCart: () => void;
-
-    // Полный сброс памяти при логауте
     resetStore: () => void;
-
-    // Функция для инициализации стора данными из БД при старте
     initStore: (cart: StoreProduct[], favorites: StoreProduct[]) => void;
 }
 
@@ -28,51 +22,33 @@ export const useShopStore = create<ShopState>()((set, get) => ({
     toggleCart: async product => {
         const previousCart = get().cart;
         const isInCart = previousCart.some(item => item.id === product.id);
+        if (isInCart)
+            set({ cart: previousCart.filter(item => item.id !== product.id) });
+        else set({ cart: [...previousCart, product] });
 
-        // 1. ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ UI (Моментально)
-        if (isInCart) {
-            set({
-                cart: previousCart.filter(item => item.id !== product.id),
-            });
-        } else {
-            set({ cart: [...previousCart, product] });
-        }
-
-        // 2. ФОНОВАЯ СИНХРОНИЗАЦИЯ С БД
         try {
             const res = await toggleCartAction(product.id);
-            if (!res?.success) {
+            if (!res?.success)
                 throw new Error(res?.error || 'Failed to sync with server');
-            }
         } catch (error) {
-            // 3. ОТКАТ (ROLLBACK) В СЛУЧАЕ ОШИБКИ
+            console.error('[TOGGLE_CART_ERROR]', error);
             set({ cart: previousCart });
-            console.error('[TOGGLE_CART_SYNC_ERROR]', error);
             toast.error('Ошибка синхронизации с сервером');
         }
     },
 
-    removeFromCart: async (productId, size) => {
+    removeFromCart: async productId => {
         const previousCart = get().cart;
+        set({ cart: previousCart.filter(item => item.id !== productId) });
 
-        // 1. ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ
-        set({
-            cart: previousCart.filter(
-                item => !(item.id === productId && item.size === size)
-            ),
-        });
-
-        // 2. ФОНОВАЯ СИНХРОНИЗАЦИЯ (toggleCartAction сработает как удаление)
         try {
-            const res = await toggleCartAction(productId);
-            if (!res?.success) {
+            const res = await toggleCartAction(productId, 'remove');
+            if (!res?.success)
                 throw new Error(res?.error || 'Failed to sync with server');
-            }
         } catch (error) {
-            // 3. ОТКАТ
+            console.error('[TOGGLE_FAVORITE_ERROR]', error);
             set({ cart: previousCart });
-            console.error('[REMOVE_CART_SYNC_ERROR]', error);
-            toast.error('Ошибка синхронизации с сервером');
+            toast.error('Ошибка удаления из корзины');
         }
     },
 
@@ -81,37 +57,44 @@ export const useShopStore = create<ShopState>()((set, get) => ({
         const isFavorite = previousFavorites.some(
             item => item.id === product.id
         );
-
-        // 1. ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ
-        if (isFavorite) {
+        if (isFavorite)
             set({
                 favorites: previousFavorites.filter(
                     item => item.id !== product.id
                 ),
             });
-        } else {
-            set({ favorites: [...previousFavorites, product] });
-        }
+        else set({ favorites: [...previousFavorites, product] });
 
-        // 2. ФОНОВАЯ СИНХРОНИЗАЦИЯ
         try {
             const res = await toggleFavoriteAction(product.id);
-            if (!res?.success) {
+            if (!res?.success)
                 throw new Error(res?.error || 'Failed to sync with server');
-            }
         } catch (error) {
-            // 3. ОТКАТ
+            console.error('[TOGGLE_FAVORITE_ERROR]', error);
             set({ favorites: previousFavorites });
-            console.error('[TOGGLE_FAVORITE_SYNC_ERROR]', error);
             toast.error('Ошибка синхронизации с сервером');
         }
     },
 
+    removeFromFavorites: async productId => {
+        const previousFavorites = get().favorites;
+        set({
+            favorites: previousFavorites.filter(item => item.id !== productId),
+        });
+
+        try {
+            const res = await toggleFavoriteAction(productId, 'remove');
+            if (!res?.success)
+                throw new Error(res?.error || 'Failed to sync with server');
+        } catch (error) {
+            console.error('[REMOVE_FAVORITE_ERROR]', error);
+
+            set({ favorites: previousFavorites });
+            toast.error('Ошибка удаления из избранного');
+        }
+    },
+
     clearCart: () => set({ cart: [] }),
-
-    // Атомарный сброс обоих массивов (при логауте)
     resetStore: () => set({ cart: [], favorites: [] }),
-
-    // подмена состояния из БД
     initStore: (cart, favorites) => set({ cart, favorites }),
 }));

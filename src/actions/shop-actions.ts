@@ -5,114 +5,132 @@ import { getOrCreateGuestId } from '@/lib/guest';
 import { mapToStoreProduct } from '@/lib/mappers';
 import { prisma } from '@/lib/prisma';
 import { StoreProduct } from '@/types/product';
+import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 
-import { revalidatePath } from 'next/cache';
-
-type NextInternalError = Error & { digest?: string };
-
-function isNextInternalError(error: unknown): error is NextInternalError {
-    if (!(error instanceof Error)) return false;
-    const digest = (error as NextInternalError).digest;
-    return (
-        digest === 'DYNAMIC_SERVER_USAGE' || error.message === 'NEXT_REDIRECT'
-    );
+interface NextDynamicError extends Error {
+    digest?: string;
 }
 
-// 1. УТИЛИТА: Определяем, кто делает запрос (Юзер или Гость)
+function isNextDynamicError(error: unknown): error is NextDynamicError {
+    return error instanceof Error && 'digest' in error;
+}
+
 async function getIdentity() {
-    const session = await auth.api.getSession({
-        headers: await headers(),
-    });
-
-    if (session?.user) {
-        return { userId: session.user.id, guestId: null };
-    }
-
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (session?.user) return { userId: session.user.id, guestId: null };
     const guestId = await getOrCreateGuestId();
     return { userId: null, guestId };
 }
 
-// 2. ЭКШЕН: Избранное (Toggle)
-export async function toggleFavoriteAction(productId: string) {
+export async function toggleFavoriteAction(
+    productId: string,
+    intent?: 'add' | 'remove'
+) {
     try {
         const { userId, guestId } = await getIdentity();
-
-        const whereClause = userId
+        const uniqueWhere = userId
             ? { productId_userId: { productId, userId } }
             : { productId_guestId: { productId, guestId: guestId! } };
 
         const existing = await prisma.favorite.findUnique({
-            where: whereClause,
+            where: uniqueWhere,
         });
+        let operation: 'create' | 'delete' | 'none' = 'none';
 
-        if (existing) {
-            await prisma.favorite.delete({ where: { id: existing.id } });
-            revalidatePath('/profile');
-            return { success: true, action: 'removed' };
-        } else {
+        if (intent === 'remove') operation = existing ? 'delete' : 'none';
+        else if (intent === 'add') operation = !existing ? 'create' : 'none';
+        else operation = existing ? 'delete' : 'create';
+
+        if (operation === 'delete') {
+            const deleteWhere = userId
+                ? { productId, userId }
+                : { productId, guestId: guestId! };
+            await prisma.favorite.deleteMany({ where: deleteWhere });
+        } else if (operation === 'create') {
             await prisma.favorite.create({
-                data: {
-                    productId,
-                    userId,
-                    guestId,
-                },
+                data: { productId, userId, guestId },
             });
-            revalidatePath('/profile');
-            return { success: true, action: 'added' };
         }
-    } catch (error) {
-        if (isNextInternalError(error)) throw error;
-        console.error('[TOGGLE_FAVORITE_ERROR]', error);
-        return { success: false, error: 'Failed to toggle favorite' };
+
+        if (operation !== 'none') revalidatePath('/profile');
+
+        const finalState =
+            operation === 'delete' || (intent === 'remove' && !existing)
+                ? 'removed'
+                : 'added';
+        return { success: true, action: finalState };
+    } catch (error: unknown) {
+        if (
+            isNextDynamicError(error) &&
+            error.digest === 'DYNAMIC_SERVER_USAGE'
+        )
+            throw error;
+        console.error(
+            '[TOGGLE_FAVORITE_ERROR]',
+            error instanceof Error ? error.message : String(error)
+        );
+        return { success: false, error: 'Failed to sync favorite' };
     }
 }
 
-// 3. ЭКШЕН: Корзина (Toggle)
-export async function toggleCartAction(productId: string) {
+export async function toggleCartAction(
+    productId: string,
+    intent?: 'add' | 'remove'
+) {
     try {
         const { userId, guestId } = await getIdentity();
-
-        const whereClause = userId
+        const uniqueWhere = userId
             ? { productId_userId: { productId, userId } }
             : { productId_guestId: { productId, guestId: guestId! } };
 
         const existing = await prisma.cartItem.findUnique({
-            where: whereClause,
+            where: uniqueWhere,
         });
+        let operation: 'create' | 'delete' | 'none' = 'none';
 
-        if (existing) {
-            await prisma.cartItem.delete({ where: { id: existing.id } });
-            revalidatePath('/profile');
-            return { success: true, action: 'removed' };
-        } else {
+        if (intent === 'remove') operation = existing ? 'delete' : 'none';
+        else if (intent === 'add') operation = !existing ? 'create' : 'none';
+        else operation = existing ? 'delete' : 'create';
+
+        if (operation === 'delete') {
+            const deleteWhere = userId
+                ? { productId, userId }
+                : { productId, guestId: guestId! };
+            await prisma.cartItem.deleteMany({ where: deleteWhere });
+        } else if (operation === 'create') {
             await prisma.cartItem.create({
-                data: {
-                    productId,
-                    userId,
-                    guestId,
-                },
+                data: { productId, userId, guestId },
             });
-            revalidatePath('/profile');
-            return { success: true, action: 'added' };
         }
-    } catch (error) {
-        if (isNextInternalError(error)) throw error;
-        console.error('[TOGGLE_CART_ERROR]', error);
-        return { success: false, error: 'Failed to toggle cart item' };
+
+        if (operation !== 'none') revalidatePath('/profile');
+
+        const finalState =
+            operation === 'delete' || (intent === 'remove' && !existing)
+                ? 'removed'
+                : 'added';
+        return { success: true, action: finalState };
+    } catch (error: unknown) {
+        if (
+            isNextDynamicError(error) &&
+            error.digest === 'DYNAMIC_SERVER_USAGE'
+        )
+            throw error;
+        console.error(
+            '[TOGGLE_CART_ERROR]',
+            error instanceof Error ? error.message : String(error)
+        );
+        return { success: false, error: 'Failed to sync cart' };
     }
 }
 
-// ==========================================
-// 4. ЭКШЕН ЧТЕНИЯ ДЛЯ HYDRATION PIPELINE
-// ==========================================
 export async function getShopState(): Promise<{
     cart: StoreProduct[];
     favorites: StoreProduct[];
 }> {
     try {
         const { userId, guestId } = await getIdentity();
-
         const whereClause = userId ? { userId } : { guestId: guestId! };
 
         const [cartData, favoritesData] = await Promise.all([
@@ -132,9 +150,16 @@ export async function getShopState(): Promise<{
             cart: cartData.map(mapToStoreProduct),
             favorites: favoritesData.map(mapToStoreProduct),
         };
-    } catch (error) {
-        if (isNextInternalError(error)) throw error;
-        console.error('[GET_SHOP_STATE_ERROR]', error);
+    } catch (error: unknown) {
+        if (
+            isNextDynamicError(error) &&
+            error.digest === 'DYNAMIC_SERVER_USAGE'
+        )
+            throw error;
+        console.error(
+            '[GET_SHOP_STATE_ERROR]',
+            error instanceof Error ? error.message : String(error)
+        );
         return { cart: [], favorites: [] };
     }
 }
