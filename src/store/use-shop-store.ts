@@ -20,11 +20,13 @@ export const useShopStore = create<ShopState>()((set, get) => ({
     favorites: [],
 
     toggleCart: async product => {
-        const previousCart = get().cart;
-        const isInCart = previousCart.some(item => item.id === product.id);
+        const isInCart = get().cart.some(item => item.id === product.id);
+
         if (isInCart)
-            set({ cart: previousCart.filter(item => item.id !== product.id) });
-        else set({ cart: [...previousCart, product] });
+            set(state => ({
+                cart: state.cart.filter(item => item.id !== product.id),
+            }));
+        else set(state => ({ cart: [...state.cart, product] }));
 
         try {
             const res = await toggleCartAction(product.id);
@@ -32,38 +34,51 @@ export const useShopStore = create<ShopState>()((set, get) => ({
                 throw new Error(res?.error || 'Failed to sync with server');
         } catch (error) {
             console.error('[TOGGLE_CART_ERROR]', error);
-            set({ cart: previousCart });
+
+            if (isInCart) set(state => ({ cart: [...state.cart, product] }));
+            else
+                set(state => ({
+                    cart: state.cart.filter(item => item.id !== product.id),
+                }));
+
             toast.error('Ошибка синхронизации с сервером');
+            throw error; // Пробрасываем ошибку для UI
         }
     },
 
     removeFromCart: async productId => {
-        const previousCart = get().cart;
-        set({ cart: previousCart.filter(item => item.id !== productId) });
+        const itemToRestore = get().cart.find(item => item.id === productId);
+
+        set(state => ({
+            cart: state.cart.filter(item => item.id !== productId),
+        }));
 
         try {
             const res = await toggleCartAction(productId, 'remove');
             if (!res?.success)
                 throw new Error(res?.error || 'Failed to sync with server');
         } catch (error) {
-            console.error('[TOGGLE_FAVORITE_ERROR]', error);
-            set({ cart: previousCart });
+            console.error('[REMOVE_CART_ERROR]', error);
+
+            if (itemToRestore) {
+                set(state => ({ cart: [...state.cart, itemToRestore] }));
+            }
+
             toast.error('Ошибка удаления из корзины');
+            throw error;
         }
     },
 
     toggleFavorite: async product => {
-        const previousFavorites = get().favorites;
-        const isFavorite = previousFavorites.some(
-            item => item.id === product.id
-        );
+        const isFavorite = get().favorites.some(item => item.id === product.id);
+
         if (isFavorite)
-            set({
-                favorites: previousFavorites.filter(
+            set(state => ({
+                favorites: state.favorites.filter(
                     item => item.id !== product.id
                 ),
-            });
-        else set({ favorites: [...previousFavorites, product] });
+            }));
+        else set(state => ({ favorites: [...state.favorites, product] }));
 
         try {
             const res = await toggleFavoriteAction(product.id);
@@ -71,16 +86,29 @@ export const useShopStore = create<ShopState>()((set, get) => ({
                 throw new Error(res?.error || 'Failed to sync with server');
         } catch (error) {
             console.error('[TOGGLE_FAVORITE_ERROR]', error);
-            set({ favorites: previousFavorites });
+
+            if (isFavorite)
+                set(state => ({ favorites: [...state.favorites, product] }));
+            else
+                set(state => ({
+                    favorites: state.favorites.filter(
+                        item => item.id !== product.id
+                    ),
+                }));
+
             toast.error('Ошибка синхронизации с сервером');
+            throw error;
         }
     },
 
     removeFromFavorites: async productId => {
-        const previousFavorites = get().favorites;
-        set({
-            favorites: previousFavorites.filter(item => item.id !== productId),
-        });
+        const itemToRestore = get().favorites.find(
+            item => item.id === productId
+        );
+
+        set(state => ({
+            favorites: state.favorites.filter(item => item.id !== productId),
+        }));
 
         try {
             const res = await toggleFavoriteAction(productId, 'remove');
@@ -89,8 +117,14 @@ export const useShopStore = create<ShopState>()((set, get) => ({
         } catch (error) {
             console.error('[REMOVE_FAVORITE_ERROR]', error);
 
-            set({ favorites: previousFavorites });
+            if (itemToRestore) {
+                set(state => ({
+                    favorites: [...state.favorites, itemToRestore],
+                }));
+            }
+
             toast.error('Ошибка удаления из избранного');
+            throw error;
         }
     },
 

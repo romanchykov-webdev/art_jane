@@ -1,0 +1,110 @@
+'use client';
+
+import { Prisma } from '@/generated/prisma';
+import { Heart, Package, ShoppingCart } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { AnimatedProfileList } from '@/components/shared/profile/animated-profile-list';
+import { EmptyTabState } from '@/components/shared/profile/empty-tab-state';
+import { OrderCard } from '@/components/shared/profile/order-card';
+import { TabTriggerItem } from '@/components/shared/profile/tab-trigger-item';
+import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
+
+import { useShopStore } from '@/store/use-shop-store';
+import { StoreProduct } from '@/types/product';
+
+
+type ProfileOrder = Prisma.OrderGetPayload<{
+    include: { items: true };
+}>;
+
+interface ProfileTabsProps {
+    initialFavorites: StoreProduct[];
+    initialCart: StoreProduct[];
+    orders: ProfileOrder[]; 
+}
+
+export function ProfileTabs({
+    initialFavorites,
+    initialCart,
+    orders,
+}: ProfileTabsProps) {
+    const [isMounted, setIsMounted] = useState(false);
+
+    const storeFavorites = useShopStore(state => state.favorites);
+    const storeCart = useShopStore(state => state.cart);
+
+    useEffect(() => {
+
+        const timer = setTimeout(() => setIsMounted(true), 0);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const currentFavorites = isMounted ? storeFavorites : initialFavorites;
+    const currentCart = isMounted ? storeCart : initialCart;
+
+    return (
+        <Tabs defaultValue="collection" className="w-full">
+            <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 bg-white/5 border border-white/10 p-1 rounded-2xl h-auto md:h-16 mb-8 gap-1 md:gap-0">
+                <TabTriggerItem value="collection">
+                    MY COLLECTION ({currentFavorites.length})
+                </TabTriggerItem>
+
+                <TabTriggerItem value="reservations">
+                    RESERVATIONS ({currentCart.length})
+                </TabTriggerItem>
+
+                <TabTriggerItem value="orders">
+                    ORDER HISTORY ({orders.length})
+                </TabTriggerItem>
+            </TabsList>
+
+            <TabsContent value="collection" className="space-y-6">
+                {currentFavorites.length > 0 ? (
+                    <AnimatedProfileList
+                        key={currentFavorites.map(i => i.id).join(',')}
+                        type="favorite"
+                        initialItems={currentFavorites}
+                    />
+                ) : (
+                    <EmptyTabState
+                        icon={<Heart className="w-12 h-12 text-white/10" />}
+                        text="Your collection is empty"
+                    />
+                )}
+            </TabsContent>
+
+            <TabsContent value="reservations" className="space-y-6">
+                {currentCart.length > 0 ? (
+                    <AnimatedProfileList
+                        type="cart"
+                        initialItems={currentCart}
+                    />
+                ) : (
+                    <EmptyTabState
+                        icon={
+                            <ShoppingCart className="w-12 h-12 text-white/10" />
+                        }
+                        text="No active reservations"
+                    />
+                )}
+            </TabsContent>
+
+            <TabsContent value="orders" className="space-y-6">
+                {orders.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* ИЗБАВЛЯЕМСЯ ОТ any в map */}
+                        {orders.map(order => (
+                            <OrderCard key={order.id} order={order} />
+                        ))}
+                    </div>
+                ) : (
+                    <EmptyTabState
+                        icon={<Package className="w-12 h-12 text-white/10" />}
+                        text="No previous orders"
+                    />
+                )}
+            </TabsContent>
+        </Tabs>
+    );
+}

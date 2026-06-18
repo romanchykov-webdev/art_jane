@@ -61,16 +61,20 @@ export async function toggleFavoriteAction(
                 : 'added';
         return { success: true, action: finalState };
     } catch (error: unknown) {
-        if (
-            isNextDynamicError(error) &&
-            error.digest === 'DYNAMIC_SERVER_USAGE'
-        )
-            throw error;
+        if (isNextDynamicError(error)) {
+            if (
+                error.digest === 'DYNAMIC_SERVER_USAGE' ||
+                error.digest?.includes('NEXT_REDIRECT')
+            ) {
+                throw error;
+            }
+        }
+
         console.error(
             '[TOGGLE_FAVORITE_ERROR]',
             error instanceof Error ? error.message : String(error)
         );
-        return { success: false, error: 'Failed to sync favorite' };
+        return { success: false, error: 'Failed to sync' };
     }
 }
 
@@ -112,16 +116,20 @@ export async function toggleCartAction(
                 : 'added';
         return { success: true, action: finalState };
     } catch (error: unknown) {
-        if (
-            isNextDynamicError(error) &&
-            error.digest === 'DYNAMIC_SERVER_USAGE'
-        )
-            throw error;
+        if (isNextDynamicError(error)) {
+            if (
+                error.digest === 'DYNAMIC_SERVER_USAGE' ||
+                error.digest?.includes('NEXT_REDIRECT')
+            ) {
+                throw error;
+            }
+        }
+
         console.error(
             '[TOGGLE_CART_ERROR]',
             error instanceof Error ? error.message : String(error)
         );
-        return { success: false, error: 'Failed to sync cart' };
+        return { success: false, error: 'Failed to sync' };
     }
 }
 
@@ -151,11 +159,15 @@ export async function getShopState(): Promise<{
             favorites: favoritesData.map(mapToStoreProduct),
         };
     } catch (error: unknown) {
-        if (
-            isNextDynamicError(error) &&
-            error.digest === 'DYNAMIC_SERVER_USAGE'
-        )
-            throw error;
+        if (isNextDynamicError(error)) {
+            if (
+                error.digest === 'DYNAMIC_SERVER_USAGE' ||
+                error.digest?.includes('NEXT_REDIRECT')
+            ) {
+                throw error;
+            }
+        }
+
         console.error(
             '[GET_SHOP_STATE_ERROR]',
             error instanceof Error ? error.message : String(error)
