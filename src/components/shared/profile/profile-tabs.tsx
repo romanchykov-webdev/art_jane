@@ -2,7 +2,7 @@
 
 import { Prisma } from '@/generated/prisma';
 import { Heart, Package, ShoppingCart } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
 import { AnimatedProfileList } from '@/components/shared/profile/animated-profile-list';
 import { EmptyTabState } from '@/components/shared/profile/empty-tab-state';
@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 import { useShopStore } from '@/store/use-shop-store';
 import { StoreProduct } from '@/types/product';
 
-
 type ProfileOrder = Prisma.OrderGetPayload<{
     include: { items: true };
 }>;
@@ -21,7 +20,7 @@ type ProfileOrder = Prisma.OrderGetPayload<{
 interface ProfileTabsProps {
     initialFavorites: StoreProduct[];
     initialCart: StoreProduct[];
-    orders: ProfileOrder[]; 
+    orders: ProfileOrder[];
 }
 
 export function ProfileTabs({
@@ -29,19 +28,23 @@ export function ProfileTabs({
     initialCart,
     orders,
 }: ProfileTabsProps) {
-    const [isMounted, setIsMounted] = useState(false);
-
-    const storeFavorites = useShopStore(state => state.favorites);
-    const storeCart = useShopStore(state => state.cart);
-
+    // Наш useEffect из Шага 2 оставляем! Он нам нужен.
     useEffect(() => {
+        useShopStore.getState().initStore(initialCart, initialFavorites);
+    }, [initialCart, initialFavorites]);
 
-        const timer = setTimeout(() => setIsMounted(true), 0);
-        return () => clearTimeout(timer);
-    }, []);
+    // Идеальная подписка на стор без морганий
+    const currentFavorites = useSyncExternalStore(
+        useShopStore.subscribe,
+        () => useShopStore.getState().favorites,
+        () => initialFavorites // <-- Это говорит React: "При первом рендере используй данные с сервера"
+    );
 
-    const currentFavorites = isMounted ? storeFavorites : initialFavorites;
-    const currentCart = isMounted ? storeCart : initialCart;
+    const currentCart = useSyncExternalStore(
+        useShopStore.subscribe,
+        () => useShopStore.getState().cart,
+        () => initialCart
+    );
 
     return (
         <Tabs defaultValue="collection" className="w-full">
@@ -62,7 +65,6 @@ export function ProfileTabs({
             <TabsContent value="collection" className="space-y-6">
                 {currentFavorites.length > 0 ? (
                     <AnimatedProfileList
-                        key={currentFavorites.map(i => i.id).join(',')}
                         type="favorite"
                         initialItems={currentFavorites}
                     />
