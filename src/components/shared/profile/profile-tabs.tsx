@@ -2,7 +2,6 @@
 
 import { Prisma } from '@/generated/prisma';
 import { Heart, Package, ShoppingCart } from 'lucide-react';
-import { useEffect, useSyncExternalStore } from 'react';
 
 import { AnimatedProfileList } from '@/components/shared/profile/animated-profile-list';
 import { EmptyTabState } from '@/components/shared/profile/empty-tab-state';
@@ -10,41 +9,14 @@ import { OrderCard } from '@/components/shared/profile/order-card';
 import { TabTriggerItem } from '@/components/shared/profile/tab-trigger-item';
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 
-import { useShopStore } from '@/store/use-shop-store';
-import { StoreProduct } from '@/types/product';
-
-type ProfileOrder = Prisma.OrderGetPayload<{
-    include: { items: true };
-}>;
-
+import { useShopStore } from '@/components/shop-store-provider';
+type ProfileOrder = Prisma.OrderGetPayload<{ include: { items: true } }>;
 interface ProfileTabsProps {
-    initialFavorites: StoreProduct[];
-    initialCart: StoreProduct[];
     orders: ProfileOrder[];
 }
-
-export function ProfileTabs({
-    initialFavorites,
-    initialCart,
-    orders,
-}: ProfileTabsProps) {
-    // Наш useEffect из Шага 2 оставляем! Он нам нужен.
-    useEffect(() => {
-        useShopStore.getState().initStore(initialCart, initialFavorites);
-    }, [initialCart, initialFavorites]);
-
-    // Идеальная подписка на стор без морганий
-    const currentFavorites = useSyncExternalStore(
-        useShopStore.subscribe,
-        () => useShopStore.getState().favorites,
-        () => initialFavorites // <-- Это говорит React: "При первом рендере используй данные с сервера"
-    );
-
-    const currentCart = useSyncExternalStore(
-        useShopStore.subscribe,
-        () => useShopStore.getState().cart,
-        () => initialCart
-    );
+export function ProfileTabs({ orders }: ProfileTabsProps) {
+    const currentFavorites = useShopStore(state => state.favorites);
+    const currentCart = useShopStore(state => state.cart);
 
     return (
         <Tabs defaultValue="collection" className="w-full">
@@ -66,7 +38,7 @@ export function ProfileTabs({
                 {currentFavorites.length > 0 ? (
                     <AnimatedProfileList
                         type="favorite"
-                        initialItems={currentFavorites}
+                        items={currentFavorites}
                     />
                 ) : (
                     <EmptyTabState
@@ -78,10 +50,7 @@ export function ProfileTabs({
 
             <TabsContent value="reservations" className="space-y-6">
                 {currentCart.length > 0 ? (
-                    <AnimatedProfileList
-                        type="cart"
-                        initialItems={currentCart}
-                    />
+                    <AnimatedProfileList type="cart" items={currentCart} />
                 ) : (
                     <EmptyTabState
                         icon={
@@ -95,7 +64,6 @@ export function ProfileTabs({
             <TabsContent value="orders" className="space-y-6">
                 {orders.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* ИЗБАВЛЯЕМСЯ ОТ any в map */}
                         {orders.map(order => (
                             <OrderCard key={order.id} order={order} />
                         ))}

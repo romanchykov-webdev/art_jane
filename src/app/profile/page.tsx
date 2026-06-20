@@ -6,7 +6,6 @@ import { redirect } from 'next/navigation';
 import { LogoGoHome } from '@/components/shared/logo-go-home';
 import { ProfileHeader } from '@/components/shared/profile/profile-header';
 import { ProfileTabs } from '@/components/shared/profile/profile-tabs';
-import { mapToStoreProduct } from '@/lib/mappers';
 
 export default async function ProfilePage() {
     // 1. Проверка сессии на сервере
@@ -33,9 +32,6 @@ export default async function ProfilePage() {
 
     if (!userData) redirect('/');
 
-    // 3. Маппинг данных
-    const mappedFavorites = userData.favorites.map(mapToStoreProduct);
-    const mappedCartItems = userData.cartItems.map(mapToStoreProduct);
     const orders = userData.orders;
 
     return (
@@ -49,11 +45,7 @@ export default async function ProfilePage() {
                 <ProfileHeader user={userData} />
 
                 {/* 4. Передаем управление клиентскому оркестратору */}
-                <ProfileTabs
-                    initialFavorites={mappedFavorites}
-                    initialCart={mappedCartItems}
-                    orders={orders}
-                />
+                <ProfileTabs orders={orders} />
             </div>
         </main>
     );

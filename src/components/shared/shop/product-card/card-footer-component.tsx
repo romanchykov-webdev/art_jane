@@ -5,8 +5,8 @@ import { CardFooter } from '@/components/ui/card';
 import { Heart, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useShopStore } from '@/components/shop-store-provider';
 import { useHasMounted } from '@/hooks/use-has-mounted';
-import { useShopStore } from '@/store/use-shop-store';
 import { ProductCardData, StoreProduct } from '@/types/product';
 
 interface Props {

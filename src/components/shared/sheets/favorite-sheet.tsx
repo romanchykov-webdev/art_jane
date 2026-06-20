@@ -1,5 +1,6 @@
 'use client';
 
+import { useShopStore } from '@/components/shop-store-provider';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -8,7 +9,6 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { useShopStore } from '@/store/use-shop-store';
 import { Heart } from 'lucide-react';
 import { SheetItemCard } from './sheet-item-card';
 

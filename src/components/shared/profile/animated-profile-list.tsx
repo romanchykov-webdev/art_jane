@@ -1,63 +1,36 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { useOptimistic, useTransition } from 'react';
 
-import { useShopStore } from '@/store/use-shop-store';
+import { useShopStoreApi } from '@/components/shop-store-provider';
 import { StoreProduct } from '@/types/product';
+import { useCallback } from 'react';
 import { ProfileItemCard } from './profile-item-card';
 
 interface AnimatedProfileListProps {
-    initialItems: StoreProduct[];
+    items: StoreProduct[];
     type: 'favorite' | 'cart';
 }
 
-export function AnimatedProfileList({
-    initialItems,
-    type,
-}: AnimatedProfileListProps) {
-    const router = useRouter();
-    const [, startTransition] = useTransition();
-
-    const [optimisticItems, removeOptimisticItem] = useOptimistic<
-        StoreProduct[],
-        string
-    >(initialItems, (state, idToRemove) =>
-        state.filter(item => item.id !== idToRemove)
-    );
-
-    const handleRemove = (item: StoreProduct) => {
-        startTransition(async () => {
+export function AnimatedProfileList({ items, type }: AnimatedProfileListProps) {
+    const storeApi = useShopStoreApi();
+    const handleRemove = useCallback(
+        async (id: string) => {
             try {
-                removeOptimisticItem(item.id);
-
-                // Обязательно дёргаем Zustand, чтобы обновились бейджики в шапке сайта
-                if (type === 'favorite') {
-                    await useShopStore.getState().removeFromFavorites(item.id);
-                } else {
-                    await useShopStore.getState().removeFromCart(item.id);
-                }
-
-                router.refresh();
-            } catch (error) {
-                console.error('[ANIMATED_LIST_REMOVE_ERROR]', error);
+                const store = storeApi.getState();
+                if (type === 'favorite') await store.removeFromFavorites(id);
+                else await store.removeFromCart(id);
+            } catch {
+                /* toast уже показан в сторе */
             }
-        });
-    };
-
-    if (optimisticItems.length === 0) {
-        return (
-            <div className="flex justify-center items-center py-10 opacity-50">
-                <p className="text-sm">No items found.</p>
-            </div>
-        );
-    }
-
+        },
+        [type, storeApi]
+    );
     return (
-        <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
+        // <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <AnimatePresence mode="popLayout" initial={false}>
-                {optimisticItems.map(item => (
+                {items.map(item => (
                     <motion.div
                         key={item.id}
                         layout
@@ -70,7 +43,7 @@ export function AnimatedProfileList({
                         <ProfileItemCard
                             item={item}
                             type={type}
-                            onRemove={() => handleRemove(item)}
+                            onRemove={() => handleRemove(item.id)}
                         />
                     </motion.div>
                 ))}
