@@ -72,6 +72,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     const productInfoData = {
         id: product.id,
         title: product.title,
+        slug,
+        thumbnailFront: product.thumbnailFront,
         price: product.price,
         description: product.description,
         size: product.size,
