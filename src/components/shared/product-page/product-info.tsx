@@ -30,19 +30,6 @@ interface ProductInfoProps {
 export function ProductInfo({ product }: ProductInfoProps) {
     const isAvailable = product.status === 'AVAILABLE';
 
-    // const handleBuy = async () => {
-    //     if (!isAvailable) return;
-
-    //     setIsPurchasing(true);
-
-    //     try {
-    //         // Симулируем задержку сети 1.5 секунды перед будущим редиректом
-    //         await new Promise(resolve => setTimeout(resolve, 1500));
-    //     } finally {
-    //         setIsPurchasing(false);
-    //     }
-    // };
-
     const cart = useShopStore(state => state.cart);
     const toggleCart = useShopStore(state => state.toggleCart);
     const favorites = useShopStore(state => state.favorites);
@@ -123,24 +110,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
                 </div>
             </div>
 
-            {/* КНОПКА "Заказать" */}
-            {/* <button
-                onClick={handleBuy}
-                disabled={!isAvailable || isPurchasing}
-                className={`relative w-full py-6 rounded-xl uppercase tracking-widest font-bold text-lg transition-all duration-300 flex items-center justify-center ${
-                    isAvailable
-                        ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-lg hover:shadow-xl hover:-translate-y-1 cursor-pointer'
-                        : 'bg-muted text-muted-foreground cursor-not-allowed'
-                }`}
-            >
-                {isPurchasing ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                ) : isAvailable ? (
-                    'Reserve / Buy 1-of-1'
-                ) : (
-                    'Sold Out'
-                )}
-            </button> */}
             <div className="flex items-center rounded-lg overflow-hidden shadow-even-lg">
                 <ActionIconButton
                     icon={ShoppingCart}
