@@ -25,6 +25,9 @@ export function SheetItemCard({
             <Link
                 href={`/product/${item.slug}`}
                 target="_blank"
+                rel="noopener noreferrer"
+                tabIndex={-1}
+                aria-hidden="true"
                 className="relative w-24 h-32 rounded-xl overflow-hidden bg-white/5 shrink-0 border border-white/10 block"
             >
                 <Image
@@ -44,6 +47,7 @@ export function SheetItemCard({
                         <Link
                             href={`/product/${item.slug}`}
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="hover:text-gray-300 transition-colors"
                         >
                             <h3 className="font-jane text-lg leading-tight line-clamp-2">
@@ -55,9 +59,17 @@ export function SheetItemCard({
                         <button
                             onClick={onRemove}
                             className="text-red-200 hover:text-rose-500 transition-colors p-1 border border-red-200 rounded-full cursor-pointer shrink-0"
-                            aria-label="Remove item"
+                            aria-label={
+                                type === 'favorite'
+                                    ? 'Remove from collection'
+                                    : 'Remove from cart'
+                            }
                         >
-                            <Icon className="w-5 h-5 fill-red-500" />
+                            {/* aria-hidden="true" прячет иконку, так как label уже всё объясняет */}
+                            <Icon
+                                className="w-5 h-5 fill-red-500"
+                                aria-hidden="true"
+                            />
                         </button>
                     </div>
                     {item.size && (

@@ -10,7 +10,7 @@ import { Inter } from 'next/font/google';
 // Импорты для Hydration Pipeline
 import { getShopState } from '@/actions/shop-actions';
 import { GuestSyncBridge } from '@/components/shared/guest-sync-bridge';
-import { StoreInitializer } from '@/components/shared/store-initializer';
+import { ShopStoreProvider } from '@/components/shop-store-provider';
 
 const inter = Inter({
     subsets: ['latin', 'cyrillic'],
@@ -35,15 +35,17 @@ export default async function RootLayout({
                 className={`${inter.variable} ${janeFont.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col`}
             >
                 {/* ДОБАВЛЕНО: Невидимый клиентский мост заливает данные в Zustand */}
-                <StoreInitializer cart={cart} favorites={favorites} />
+                {/* <StoreInitializer cart={cart} favorites={favorites} /> */}
 
-                {/* ДОБАВЛЕНО: Глобальный слушатель слияния */}
-                <GuestSyncBridge />
-                {/* Header (Navbar) */}
-                <main className="grow flex flex-col">{children}</main>
-                {/* Footer */}
-                <Toaster />
-                <MobileFabs />
+                <ShopStoreProvider initialState={{ cart, favorites }}>
+                    {/* ДОБАВЛЕНО: Глобальный слушатель слияния */}
+                    <GuestSyncBridge />
+                    {/* Header (Navbar) */}
+                    <main className="grow flex flex-col">{children}</main>
+                    {/* Footer */}
+                    <Toaster />
+                    <MobileFabs />
+                </ShopStoreProvider>
             </body>
         </html>
     );

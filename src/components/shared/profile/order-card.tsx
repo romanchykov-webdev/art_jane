@@ -1,15 +1,17 @@
+import { OrderStatus } from '@/generated/prisma';
 import { formatPrice } from '@/lib/utils';
 import Image from 'next/image';
-import Link from 'next/link'; // ДОБАВЛЕНО: Импорт Link
+import Link from 'next/link';
+import { memo } from 'react';
 
 interface OrderCardProps {
     order: {
         id: string;
-        status: 'PENDING' | 'PAID' | 'SHIPPED' | 'CANCELLED';
+        status: OrderStatus;
         createdAt: Date;
         items: {
             id: string;
-            slug: string; // ДОБАВЛЕНО: Теперь мы ожидаем slug для ссылки
+            slug: string;
             title: string;
             price: number;
             thumbnailFront: string;
@@ -17,7 +19,7 @@ interface OrderCardProps {
     };
 }
 
-const statusConfig = {
+const statusConfig: Record<OrderStatus, { label: string; color: string }> = {
     PENDING: {
         label: 'AWAITING PAYMENT',
         color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
@@ -36,15 +38,17 @@ const statusConfig = {
     },
 };
 
-export function OrderCard({ order }: OrderCardProps) {
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+});
+
+function OrderCardBase({ order }: OrderCardProps) {
     const config = statusConfig[order.status];
     const totalAmount = order.items.reduce((sum, item) => sum + item.price, 0);
 
-    const formattedDate = new Intl.DateTimeFormat('en-US', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-    }).format(new Date(order.createdAt));
+    const formattedDate = dateFormatter.format(new Date(order.createdAt));
 
     return (
         <div className="p-6 bg-white/5 border border-white/10 rounded-[24px] space-y-6 shadow-2xl group/card">
@@ -74,6 +78,7 @@ export function OrderCard({ order }: OrderCardProps) {
                     <Link
                         href={`/product/${item.slug}`}
                         target="_blank"
+                        rel="noopener noreferrer"
                         key={item.id}
                         className="block relative w-full aspect-4/5 sm:aspect-square md:aspect-4/5 rounded-2xl overflow-hidden shadow-lg group/item cursor-pointer"
                     >
@@ -109,3 +114,4 @@ export function OrderCard({ order }: OrderCardProps) {
         </div>
     );
 }
+export const OrderCard = memo(OrderCardBase);

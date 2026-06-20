@@ -1,5 +1,6 @@
 'use client';
 
+import { useShopStore } from '@/components/shop-store-provider';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -9,7 +10,6 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { formatPrice } from '@/lib/utils';
-import { useShopStore } from '@/store/use-shop-store';
 import { ShoppingBag, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { SheetItemCard } from './sheet-item-card';
@@ -64,9 +64,7 @@ export function CartSheet({ children, cartCount }: CartSheetProps) {
                                 key={`${item.id}-${item.size}`}
                                 item={item}
                                 type="cart"
-                                onRemove={() =>
-                                    removeFromCart(item.id, item.size!)
-                                }
+                                onRemove={() => removeFromCart(item.id)}
                             />
                         ))
                     )}
