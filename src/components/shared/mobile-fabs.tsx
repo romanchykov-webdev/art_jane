@@ -4,8 +4,8 @@ import { Heart, ShoppingCart } from 'lucide-react';
 import { CartSheet } from './sheets/cart-sheet';
 import { FavoriteSheet } from './sheets/favorite-sheet';
 
+import { useShopStore } from '@/components/shop-store-provider';
 import { useHasMounted } from '@/hooks/use-has-mounted';
-import { useShopStore } from '@/store/use-shop-store';
 import { CountBadge } from './count-badge';
 
 export function MobileFabs() {

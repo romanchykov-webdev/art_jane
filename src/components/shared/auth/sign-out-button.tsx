@@ -5,25 +5,17 @@ import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
-import { useShopStore } from '@/store/use-shop-store';
-
+import { useShopStoreApi } from '@/components/shop-store-provider';
 export function SignOutButton() {
     const router = useRouter();
-
+    const storeApi = useShopStoreApi();
     const handleSignOut = async () => {
         await authClient.signOut({
             fetchOptions: {
                 onSuccess: () => {
-                    // 1. Синхронно "убиваем" память фронтенда (Zustand)
-                    useShopStore.getState().resetStore();
-
-                    // 2. Отправляем визуальный фидбек
+                    storeApi.getState().resetStore();
                     toast.success('До встречи!');
-
-                    // 3. Запускаем Soft Navigation на главную
                     router.push('/');
-
-                    // 4. Инвалидируем серверный кэш Next.js 16.2.1
                     router.refresh();
                 },
             },

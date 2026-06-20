@@ -1,5 +1,6 @@
 'use client';
 
+import { useShopStore } from '@/components/shop-store-provider';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -8,7 +9,6 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { useShopStore } from '@/store/use-shop-store';
 import { Heart } from 'lucide-react';
 import { SheetItemCard } from './sheet-item-card';
 
@@ -24,7 +24,10 @@ export function FavoriteSheet({
     side = 'right',
 }: FavoriteSheetProps) {
     const favorites = useShopStore(state => state.favorites);
-    const toggleFavorite = useShopStore(state => state.toggleFavorite);
+    // const toggleFavorite = useShopStore(state => state.toggleFavorite);
+    const removeFromFavorites = useShopStore(
+        state => state.removeFromFavorites
+    );
     const cart = useShopStore(state => state.cart);
     const toggleCart = useShopStore(state => state.toggleCart);
 
@@ -77,7 +80,10 @@ export function FavoriteSheet({
                                     key={`${item.id}-${item.size}`}
                                     item={item}
                                     type="favorite"
-                                    onRemove={() => toggleFavorite(item)}
+                                    // onRemove={() => toggleFavorite(item)}
+                                    onRemove={() =>
+                                        removeFromFavorites(item.id)
+                                    }
                                     actionSlot={
                                         !isAvailable ? (
                                             <Button
