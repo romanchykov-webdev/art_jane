@@ -37,14 +37,16 @@ export default async function ProfilePage() {
     return (
         <main className="min-h-screen pt-32 pb-20 px-4 md:px-8">
             <div className="max-w-5xl mx-auto">
+                {/* Go tu home and logo */}
                 <LogoGoHome
                     classNameWrapper="mb-12"
                     classNameLogo="items-center justify-center flex-1"
                 />
 
+                {/* Profile data header */}
                 <ProfileHeader user={userData} />
 
-                {/* 4. Передаем управление клиентскому оркестратору */}
+                {/* tabs sections and content */}
                 <ProfileTabs orders={orders} />
             </div>
         </main>
