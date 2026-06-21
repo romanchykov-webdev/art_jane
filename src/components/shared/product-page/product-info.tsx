@@ -1,13 +1,12 @@
 'use client';
 
-import { useShopStore } from '@/components/shop-store-provider';
 import { ProductStatus } from '@/generated/prisma';
-import { useHasMounted } from '@/hooks/use-has-mounted';
 import { formatPrice } from '@/lib/utils';
 import { StoreProduct } from '@/types/product';
 import { Heart, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useProductActions } from '@/hooks/use-product-actions';
 import { ActionIconButton } from './action-icon-button';
 export interface ProductInfoData {
     id: string;
@@ -28,13 +27,6 @@ interface ProductInfoProps {
 }
 
 export function ProductInfo({ product }: ProductInfoProps) {
-    const isAvailable = product.status === 'AVAILABLE';
-
-    const cart = useShopStore(state => state.cart);
-    const toggleCart = useShopStore(state => state.toggleCart);
-    const favorites = useShopStore(state => state.favorites);
-    const toggleFavorite = useShopStore(state => state.toggleFavorite);
-    const isMounted = useHasMounted();
     const storeProduct: StoreProduct = {
         id: product.id,
         title: product.title,
@@ -44,33 +36,28 @@ export function ProductInfo({ product }: ProductInfoProps) {
         slug: product.slug,
         status: product.status,
     };
-    const isFavorite = isMounted
-        ? favorites.some(item => item?.id === storeProduct.id)
-        : false;
-    const isInCart = isMounted
-        ? cart.some(item => item?.id === storeProduct.id)
-        : false;
-    const handleToggleCart = () => {
-        if (!isAvailable) return;
-        toggleCart(storeProduct);
-        if (isInCart) {
-            toast.error('Удалено из корзины');
-        } else {
-            toast.success(`${product.title} добавлена в корзину`, {
-                className: 'bg-emerald-500 text-white border-none',
-            });
-        }
-    };
-    const handleToggleFavorite = () => {
-        toggleFavorite(storeProduct);
-        if (isFavorite) {
-            toast.error('Удалено из избранного');
-        } else {
-            toast.success('Добавлено в избранное', {
-                className: 'bg-emerald-500 text-white border-none',
-            });
-        }
-    };
+
+    const { isInCart, isFavorite, isAvailable, toggleCart, toggleFavorite } =
+        useProductActions(storeProduct, {
+            onToggleCart: next => {
+                if (next.isInCart) {
+                    toast.success(`${product.title} добавлена в корзину`, {
+                        className: 'bg-emerald-500 text-white border-none',
+                    });
+                } else {
+                    toast.error('Удалено из корзины');
+                }
+            },
+            onToggleFavorite: next => {
+                if (next.isFavorite) {
+                    toast.success('Добавлено в избранное', {
+                        className: 'bg-emerald-500 text-white border-none',
+                    });
+                } else {
+                    toast.error('Удалено из избранного');
+                }
+            },
+        });
 
     return (
         <div className="flex flex-col pt-4">
@@ -114,7 +101,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
                 <ActionIconButton
                     icon={ShoppingCart}
                     active={isInCart}
-                    onClick={handleToggleCart}
+                    onClick={toggleCart}
                     disabled={!isAvailable}
                 />
 
@@ -123,7 +110,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
                 <ActionIconButton
                     icon={Heart}
                     active={isFavorite}
-                    onClick={handleToggleFavorite}
+                    onClick={toggleFavorite}
                 />
             </div>
         </div>

@@ -20,17 +20,23 @@ export function ProfileTabs({ orders }: ProfileTabsProps) {
 
     return (
         <Tabs defaultValue="collection" className="w-full">
-            <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 bg-white/5 border border-white/10 p-1 rounded-2xl h-auto md:h-16 mb-8 gap-1 md:gap-0">
+            <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 bg-white/5 border border-white/10 p-1 rounded-2xl h-auto md:h-16 mb-8 gap-1 md:gap-0 ">
                 <TabTriggerItem value="collection">
-                    MY COLLECTION ({currentFavorites.length})
+                    <span className="cursor-pointer">
+                        MY COLLECTION ({currentFavorites.length})
+                    </span>
                 </TabTriggerItem>
 
                 <TabTriggerItem value="reservations">
-                    RESERVATIONS ({currentCart.length})
+                    <span className="cursor-pointer">
+                        RESERVATIONS ({currentCart.length})
+                    </span>
                 </TabTriggerItem>
 
                 <TabTriggerItem value="orders">
-                    ORDER HISTORY ({orders.length})
+                    <span className="cursor-pointer">
+                        ORDER HISTORY ({orders.length})
+                    </span>
                 </TabTriggerItem>
             </TabsList>
 
