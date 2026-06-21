@@ -5,25 +5,15 @@ import { CardFooter } from '@/components/ui/card';
 import { Heart, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useShopStore } from '@/components/shop-store-provider';
-import { useHasMounted } from '@/hooks/use-has-mounted';
+import { useProductActions } from '@/hooks/use-product-actions';
 import { ProductCardData, StoreProduct } from '@/types/product';
 
 interface Props {
     product: ProductCardData;
-    isAvailable: boolean;
 }
 
-export function CardFooterComponent({ product, isAvailable }: Props) {
-    const cart = useShopStore(state => state.cart);
-    const toggleCart = useShopStore(state => state.toggleCart);
-
-    const favorites = useShopStore(state => state.favorites);
-    const toggleFavorite = useShopStore(state => state.toggleFavorite);
-
-    const isMounted = useHasMounted();
-
-    // Преобразуем product в StoreProduct
+export function CardFooterComponent({ product }: Props) {
+    // 1. Хук строго ждет StoreProduct
     const storeProduct: StoreProduct = {
         id: product.id,
         title: product.title,
@@ -34,46 +24,41 @@ export function CardFooterComponent({ product, isAvailable }: Props) {
         status: product.status,
     };
 
-    const isFavorite = isMounted
-        ? favorites.some(item => item?.id === storeProduct.id)
-        : false;
-    const isInCart = isMounted
-        ? cart.some(item => item?.id === storeProduct.id)
-        : false;
-
-    const handleToggleCart = () => {
-        if (!isAvailable) return;
-        toggleCart(storeProduct);
-        if (isInCart) {
-            toast.error('Удалено из корзины');
-        } else {
-            toast.success(`${product.title} добавлена в корзину`, {
-                className: 'bg-emerald-500 text-white border-none',
-            });
-        }
-    };
-
-    const handleToggleFavorite = () => {
-        toggleFavorite(storeProduct);
-        if (isFavorite) {
-            toast.error('Удалено из избранного');
-        } else {
-            toast.success('Добавлено в избранное', {
-                className: 'bg-emerald-500 text-white border-none',
-            });
-        }
-    };
+    // 2.  хук . Тосты живут в колбэках хука!
+    const { isInCart, isFavorite, isAvailable, toggleCart, toggleFavorite } =
+        useProductActions(storeProduct, {
+            // Используем next.isInCart, чтобы избежать чтения старого стейта при дабл-кликах
+            onToggleCart: next => {
+                if (next.isInCart) {
+                    toast.success(`${product.title} добавлена в корзину`, {
+                        className: 'bg-emerald-500 text-white border-none',
+                    });
+                } else {
+                    toast.error('Удалено из корзины');
+                }
+            },
+            onToggleFavorite: next => {
+                if (next.isFavorite) {
+                    toast.success('Добавлено в избранное', {
+                        className: 'bg-emerald-500 text-white border-none',
+                    });
+                } else {
+                    toast.error('Удалено из избранного');
+                }
+            },
+        });
 
     return (
         <CardFooter className="p-0 flex font-jane">
             <Button
                 variant="destructive"
-                onClick={handleToggleCart}
-                disabled={!isAvailable}
+                onClick={toggleCart}
+                aria-disabled={!isAvailable}
+                aria-pressed={isInCart}
                 className="flex-1 gap-2 rounded-none py-6 uppercase tracking-widest cursor-pointer
                         text-xs transition-all duration-300 active:scale-[0.98] border-none text-black font-jane group"
             >
-                {isAvailable ? (
+                {isAvailable && (
                     <ShoppingCart
                         className={`size-10 transition-colors duration-300 ${
                             isInCart
@@ -81,8 +66,6 @@ export function CardFooterComponent({ product, isAvailable }: Props) {
                                 : 'text-black fill-transparent group-hover:fill-black/20'
                         }`}
                     />
-                ) : (
-                    ''
                 )}
                 {isAvailable ? '' : 'Sold Out'}
             </Button>
@@ -92,7 +75,8 @@ export function CardFooterComponent({ product, isAvailable }: Props) {
             <Button
                 variant="destructive"
                 size="icon"
-                onClick={handleToggleFavorite}
+                onClick={toggleFavorite}
+                aria-pressed={isFavorite}
                 className="flex-1 gap-2 rounded-none py-6 uppercase tracking-widest text-xs cursor-pointer
                         transition-all duration-300 active:scale-[0.98] border-none group"
             >
