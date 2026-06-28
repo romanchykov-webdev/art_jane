@@ -95,7 +95,8 @@ html {
     scroll-behavior: smooth;
 }
 main {
-    background-color: #e5e7eb !important;
+    background-color: #e5e7eb;
+    /* background-color: #e5e7eb !important; */
 }
 /* Скрытие дефолтного скроллбара для горизонтального меню */
 @layer utilities {
