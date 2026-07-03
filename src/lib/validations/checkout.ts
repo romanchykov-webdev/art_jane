@@ -1,4 +1,4 @@
-import { isValidPhoneNumber } from 'react-phone-number-input';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import { z } from 'zod';
 
 /**
@@ -34,6 +34,12 @@ export const customerInfoSchema = z.object({
         .refine(isValidPhoneNumber, {
             message: 'Некорректный номер телефона',
         }),
+    // адрес доставки
+    country: z.string().min(1, 'Выберите или укажите страну'),
+    city: z.string().min(1, 'Город обязателен'),
+    postalCode: z.string().min(1, 'Индекс обязателен'),
+    street: z.string().min(1, 'Улица и номер дома обязательны'),
+    state: z.string().optional(),
 });
 
 export type CustomerInfo = z.infer<typeof customerInfoSchema>;

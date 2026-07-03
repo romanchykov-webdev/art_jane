@@ -35,6 +35,10 @@ model Product {
   
   status             ProductStatus @default(AVAILABLE)
 
+  // время, до которого действует бронь.
+  // NULL = товар не забронирован (AVAILABLE или SOLD).
+  reservedUntil      DateTime?
+
   thumbnailFront     String
   thumbnailBack      String
   gallery            String[]
@@ -63,6 +67,10 @@ model Product {
   @@index([categoryId])
   @@index([status])
   @@index([slug])
+
+  // композитный индекс под воркер автоматического снятия брони.
+  // Запрос вида: WHERE status = 'RESERVED' AND reservedUntil < now()
+  @@index([status, reservedUntil])
 }
 
 model Order {
@@ -72,8 +80,20 @@ model Order {
   // Данные для гостя
   customerEmail    String?
   customerName     String?
-  customerAddress  Json?       
+  customerPhone    String?     
+
+  // Данные для доставки
+  shippingCountry    String?
+  shippingCity       String?
+  shippingPostalCode String? // Почтовый индекс
+  shippingStreet     String? // Улица, номер дома, квартира
+  shippingState      String? // Область, регион
   
+  // Гость по куке — для консистентности с Favorite/CartItem
+  guestId          String?     // чтобы привязать заказ к гостевой сессии
+  // Снимок суммы на момент заказа (цена товара может измениться)
+  totalAmount      Int         @default(0)  // в минорных единицах (центы)
+
   // Связь с авторизованным пользователем
   userId           String?
   user             User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -89,6 +109,8 @@ model Order {
 
   @@index([stripeSessionId])
   @@index([userId]) //Индекс для быстрого поиска заказов юзера
+  @@index([guestId])          // + NEW
+  @@index([status, expiresAt]) // + NEW: для крона, чистящего протухшие PENDING-заказы
 }
 
 model Category {
@@ -173,7 +195,12 @@ model User {
   accounts      Account[]
 
   phone         String?   
-  address       Json?     // Json  для хранения { city: "", street: "", zip: "" }
+  // Данные для доставки
+  country       String?
+  city          String?
+  postalCode    String?
+  street        String?
+  state         String?
   
   //Связи с e-commerce таблицами
   favorites     Favorite[]

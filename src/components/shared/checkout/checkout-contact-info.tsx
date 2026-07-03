@@ -4,10 +4,12 @@ import { CheckoutForm } from './checkout-form';
 
 interface Props {
     className?: string;
+    productIds: string[];
 }
 
 export const CheckoutContactInfo: React.FC<Props> = ({
     className,
+    productIds,
 }): JSX.Element => {
     return (
         <section className={cn('lg:col-span-3', className)}>
@@ -15,7 +17,7 @@ export const CheckoutContactInfo: React.FC<Props> = ({
                 <h2 className="mb-8 text-2xl font-jane tracking-wider">
                     Contact Information
                 </h2>
-                <CheckoutForm />
+                <CheckoutForm productIds={productIds} />
             </div>
         </section>
     );

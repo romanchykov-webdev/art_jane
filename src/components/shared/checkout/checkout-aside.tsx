@@ -1,8 +1,8 @@
-import { Button } from '@/components/ui/button';
 import { cn, formatPrice } from '@/lib/utils';
 import { StoreProduct } from '@/types/product';
 import Image from 'next/image';
 import React, { JSX } from 'react';
+import { CheckoutSubmitButton } from './checkout-submit-button';
 
 interface Props {
     className?: string;
@@ -59,14 +59,7 @@ export const CheckoutAside: React.FC<Props> = ({
                     <span>Total</span>
                     <span>{formatPrice(total)}</span>
                 </div>
-                <Button
-                    type="submit"
-                    form="checkout-form"
-                    disabled={items.length === 0}
-                    className="w-full h-14 rounded-full font-jane text-sm tracking-widest bg-amber-500 text-black hover:bg-amber-600 cursor-pointer"
-                >
-                    PROCEED TO PAYMENT
-                </Button>
+                <CheckoutSubmitButton disabled={items.length === 0} />
             </div>
         </aside>
     );

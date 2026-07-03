@@ -14,7 +14,9 @@ export default async function CheckoutPage() {
 
                 <div className="grid grid-cols-1 gap-12 lg:grid-cols-5">
                     {/* ЛЕВАЯ КОЛОНКА (60%) — Форма */}
-                    <CheckoutContactInfo />
+                    <CheckoutContactInfo
+                        productIds={cart.map(item => item.id)}
+                    />
 
                     {/* ПРАВАЯ КОЛОНКА (40%) — Order Summary */}
                     <CheckoutAside items={cart} />
