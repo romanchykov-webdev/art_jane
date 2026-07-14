@@ -8,8 +8,9 @@ export default function Page() {
             </h1>
 
             <p className="text-white/60 max-w-md mb-8">
-                Платёж не был завершён. Ваши товары пока зарезервированы — вы
-                можете вернуться и попробовать оформить заказ снова.
+                Платёж был прерван, и бронь с товаров немедленно снята. Вы
+                можете попробовать оформить заказ заново, если товары всё ещё в
+                наличии.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -17,7 +18,7 @@ export default function Page() {
                     href="/checkout"
                     className="h-12 px-8 inline-flex items-center justify-center rounded-full font-jane text-sm tracking-widest bg-amber-500 text-black hover:bg-amber-600 transition-colors"
                 >
-                    ВЕРНУТЬСЯ К ОПЛАТЕ
+                    ОФОРМИТЬ ЗАНОВО
                 </Link>
 
                 <Link

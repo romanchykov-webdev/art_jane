@@ -140,7 +140,7 @@ export async function createCheckoutSession(
                     orderId: result.orderId, // Передаем ID для последующей обработки в Вебхуке
                 },
                 success_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`,
+                cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/checkout/cancel?session_id={CHECKOUT_SESSION_ID}`,
             },
             {
                 idempotencyKey: `order_${result.orderId}`, // Сохраняем защиту от дублирования запросов
