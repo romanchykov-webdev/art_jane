@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true });
 }
 
-// ✅ Успешная оплата: заказ → PAID, товары → SOLD, сохраняем адрес доставки
+// ✅ Успешная оплата: заказ → PAID, товары → SOLD
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const orderId = session.metadata?.orderId;
     if (!orderId) {
@@ -84,38 +84,22 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         return;
     }
 
-    // 1. Извлекаем данные доставки из сессии Stripe
-    const shippingDetails = session.shipping_details;
-    const address = shippingDetails?.address;
-
     await prisma.$transaction(async tx => {
         const order = await tx.order.findUnique({
             where: { id: orderId },
             select: { id: true, status: true },
         });
 
-        // 🔥 Идемпотентность: Stripe может прислать событие повторно.
-        // Обрабатываем только заказы, которые всё ещё ждут оплаты.
+        // 🔥 Идемпотентность: Обрабатываем только PENDING
         if (!order || order.status !== 'PENDING') return;
 
-        // 2. Расширяем обновление заказа, добавляя поля адреса
+        // Обновляем ТОЛЬКО статус.
         await tx.order.update({
             where: { id: orderId },
-            data: {
-                status: 'PAID',
-                // Если пользователь указал имя для доставки, сохраняем его
-                customerName: shippingDetails?.name || undefined,
-
-                // Раскладываем структурированный адрес
-                shippingStreet: address?.line1 || '',
-                shippingCity: address?.city || '',
-                shippingState: address?.state || null,
-                shippingPostalCode: address?.postal_code || '',
-                shippingCountry: address?.country || '',
-            },
+            data: { status: 'PAID' },
         });
 
-        // Снимаем бронь и фиксируем продажу только для товаров этого заказа
+        // Снимаем бронь и фиксируем продажу
         await tx.product.updateMany({
             where: { orderId },
             data: { status: ProductStatus.SOLD, reservedUntil: null },

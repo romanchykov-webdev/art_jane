@@ -1,8 +1,12 @@
+'use client';
+import { useShopStore } from '@/components/shop-store-provider';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn, formatPrice } from '@/lib/utils';
 import { StoreProduct } from '@/types/product';
 import Image from 'next/image';
-import React, { JSX } from 'react';
+import React, { JSX, useTransition } from 'react';
 import { CheckoutSubmitButton } from './checkout-submit-button';
+import { RemoveItemButton } from './remove-button';
 
 interface Props {
     className?: string;
@@ -13,6 +17,15 @@ export const CheckoutAside: React.FC<Props> = ({
     className,
     items,
 }): JSX.Element => {
+    const [isPending, startTransition] = useTransition();
+
+    const removeFromCart = useShopStore(state => state.removeFromCart);
+
+    const handleRemove = (productId: string) => {
+        startTransition(async () => {
+            await removeFromCart(productId);
+        });
+    };
     const total = items.reduce((sum, item) => sum + item.price, 0);
     return (
         <aside className={cn('lg:col-span-2', className)}>
@@ -25,8 +38,11 @@ export const CheckoutAside: React.FC<Props> = ({
                         items.map(item => (
                             <div
                                 key={item.id}
-                                className="flex items-center gap-4"
+                                className="flex items-center gap-4 relative"
                             >
+                                {isPending && (
+                                    <Skeleton className="h-full w-full absolute top-0 left-0 z-10" />
+                                )}
                                 <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-lg">
                                     <Image
                                         src={item.thumbnailFront}
@@ -44,9 +60,16 @@ export const CheckoutAside: React.FC<Props> = ({
                                         Size: {item.size}
                                     </p>
                                 </div>
-                                <span className="font-medium">
-                                    {formatPrice(item.price)}
-                                </span>
+                                <div className="flex flex-col  gap-2 ">
+                                    <span className="font-medium">
+                                        {formatPrice(item.price)}
+                                    </span>
+                                    <RemoveItemButton
+                                        handleRemove={() =>
+                                            handleRemove(item.id)
+                                        }
+                                    />
+                                </div>
                             </div>
                         ))
                     ) : (
@@ -59,7 +82,9 @@ export const CheckoutAside: React.FC<Props> = ({
                     <span>Total</span>
                     <span>{formatPrice(total)}</span>
                 </div>
-                <CheckoutSubmitButton disabled={items.length === 0} />
+                <CheckoutSubmitButton
+                    disabled={items.length === 0 || isPending}
+                />
             </div>
         </aside>
     );

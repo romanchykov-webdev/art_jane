@@ -196,6 +196,8 @@ model User {
 
   phone         String?   
   // Данные для доставки
+  firstName     String?   
+  lastName      String?
   country       String?
   city          String?
   postalCode    String?

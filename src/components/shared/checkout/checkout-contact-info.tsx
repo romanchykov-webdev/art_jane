@@ -1,15 +1,18 @@
 import { cn } from '@/lib/utils';
+import { CustomerInfo } from '@/lib/validations/checkout';
 import React, { JSX } from 'react';
 import { CheckoutForm } from './checkout-form';
 
 interface Props {
     className?: string;
     productIds: string[];
+    initialUserDetails: Partial<CustomerInfo> | null;
 }
 
 export const CheckoutContactInfo: React.FC<Props> = ({
     className,
     productIds,
+    initialUserDetails,
 }): JSX.Element => {
     return (
         <section className={cn('lg:col-span-3', className)}>
@@ -17,7 +20,10 @@ export const CheckoutContactInfo: React.FC<Props> = ({
                 <h2 className="mb-8 text-2xl font-jane tracking-wider">
                     Contact Information
                 </h2>
-                <CheckoutForm productIds={productIds} />
+                <CheckoutForm
+                    productIds={productIds}
+                    initialUserDetails={initialUserDetails}
+                />
             </div>
         </section>
     );

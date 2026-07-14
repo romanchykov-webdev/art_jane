@@ -26,6 +26,7 @@ import { useEffect, useState, useTransition } from 'react';
 
 interface Props {
     productIds: string[];
+    initialUserDetails: Partial<CustomerInfo> | null;
 }
 
 // Кастомный компонент для PhoneInput, чтобы он использовал стили shadcn
@@ -41,7 +42,7 @@ const CustomPhoneInput = forwardRef<
 ));
 CustomPhoneInput.displayName = 'CustomPhoneInput';
 
-export function CheckoutForm({ productIds }: Props) {
+export function CheckoutForm({ productIds, initialUserDetails }: Props) {
     const [isPending, startTransition] = useTransition();
     const [serverError, setServerError] = useState<string | null>(null);
 
@@ -53,15 +54,15 @@ export function CheckoutForm({ productIds }: Props) {
         resolver: zodResolver(customerInfoSchema),
         mode: 'onChange', //  onChange для мгновенной реакции кнопки
         defaultValues: {
-            firstName: '',
-            lastName: '',
-            email: '',
-            phone: '',
-            country: '',
-            city: '',
-            postalCode: '',
-            street: '',
-            state: '',
+            firstName: initialUserDetails?.firstName || '',
+            lastName: initialUserDetails?.lastName || '',
+            email: initialUserDetails?.email || '',
+            phone: initialUserDetails?.phone || '',
+            country: initialUserDetails?.country || '',
+            city: initialUserDetails?.city || '',
+            postalCode: initialUserDetails?.postalCode || '',
+            street: initialUserDetails?.street || '',
+            state: initialUserDetails?.state || '',
         },
     });
 
@@ -87,6 +88,7 @@ export function CheckoutForm({ productIds }: Props) {
 
     const onSubmit = (data: CustomerInfo) => {
         setServerError(null);
+        console.log('data', data);
         startTransition(async () => {
             try {
                 const url = await createCheckoutSession(data, productIds);
@@ -205,7 +207,10 @@ export function CheckoutForm({ productIds }: Props) {
                                             defaultCountry="IT"
                                             inputComponent={CustomPhoneInput}
                                             value={field.value}
-                                            onChange={field.onChange}
+                                            // Перехватываем undefined
+                                            onChange={val =>
+                                                field.onChange(val || '')
+                                            }
                                             className="flex w-full "
                                         />
                                     </FormControl>

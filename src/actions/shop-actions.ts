@@ -137,7 +137,10 @@ export async function toggleCartAction(
             });
         }
 
-        if (operation !== 'none') revalidatePath('/profile');
+        // if (operation !== 'none') revalidatePath('/profile');
+        if (operation !== 'none') {
+            revalidatePath('/', 'layout');
+        }
 
         const finalState =
             operation === 'delete' || (intent === 'remove' && !existing)
