@@ -10,7 +10,11 @@ export function CheckoutButton() {
     return (
         <Button
             disabled={pending}
-            className="w-full bg-white text-black hover:bg-white/90 rounded-full font-jane transition-all h-14 text-xl tracking-wider disabled:opacity-100"
+            className="w-full bg-white text-black hover:bg-white/90 rounded-full font-jane 
+            transition-all duration-300
+            h-14 text-xl tracking-wider disabled:opacity-100 cursor-pointer
+            hover:shadow-even-md hover:text-amber-500 
+            "
         >
             {pending ? (
                 <Loader2 className="w-6 h-6 animate-spin" />
