@@ -101,7 +101,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
         // Снимаем бронь и фиксируем продажу
         await tx.product.updateMany({
-            where: { orderId },
+            where: {
+                orderItems: {
+                    some: { orderId: orderId },
+                },
+            },
             data: { status: ProductStatus.SOLD, reservedUntil: null },
         });
     });
@@ -127,7 +131,12 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
 
         // Возвращаем товары в продажу, только если они всё ещё зарезервированы
         await tx.product.updateMany({
-            where: { orderId, status: ProductStatus.RESERVED },
+            where: {
+                orderItems: {
+                    some: { orderId: orderId },
+                },
+                status: ProductStatus.RESERVED,
+            },
             data: { status: ProductStatus.AVAILABLE, reservedUntil: null },
         });
     });

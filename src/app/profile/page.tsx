@@ -24,7 +24,11 @@ export default async function ProfilePage() {
             favorites: { include: { product: true } },
             cartItems: { include: { product: true } },
             orders: {
-                include: { items: true },
+                include: {
+                    items: {
+                        include: { product: true },
+                    },
+                },
                 orderBy: { createdAt: 'desc' },
             },
         },

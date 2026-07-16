@@ -11,10 +11,13 @@ interface OrderCardProps {
         createdAt: Date;
         items: {
             id: string;
-            slug: string;
-            title: string;
-            price: number;
-            thumbnailFront: string;
+            priceAtOrder: number; // Берем из снимка
+            titleAtOrder: string; // Берем из снимка
+            product: {
+                // Подтягиваем из связи
+                slug: string;
+                thumbnailFront: string;
+            };
         }[];
     };
 }
@@ -46,7 +49,12 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 
 function OrderCardBase({ order }: OrderCardProps) {
     const config = statusConfig[order.status];
-    const totalAmount = order.items.reduce((sum, item) => sum + item.price, 0);
+
+    // 2. Считаем сумму по зафиксированным ценам (priceAtOrder)
+    const totalAmount = order.items.reduce(
+        (sum, item) => sum + item.priceAtOrder,
+        0
+    );
 
     const formattedDate = dateFormatter.format(new Date(order.createdAt));
 
@@ -75,27 +83,28 @@ function OrderCardBase({ order }: OrderCardProps) {
             {/* ТОВАРЫ В ЗАКАЗЕ  */}
             <div className="space-y-6">
                 {order.items.map(item => (
+                    // 3. Берем slug из связанного продукта
                     <Link
-                        href={`/product/${item.slug}`}
+                        href={`/product/${item.product.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         key={item.id}
                         className="block relative w-full aspect-4/5 sm:aspect-square md:aspect-4/5 rounded-2xl overflow-hidden shadow-lg group/item cursor-pointer"
                     >
-                        {/* ИЗОБРАЖЕНИЕ */}
+                        {/* 4. Берем картинку из связанного продукта */}
                         <Image
-                            src={item.thumbnailFront}
-                            alt={item.title}
+                            src={item.product.thumbnailFront}
+                            alt={item.titleAtOrder}
                             fill
                             className="object-cover transition-transform duration-700 group-hover/item:scale-105"
                             sizes="(max-width: 768px) 100vw, 50vw"
                         />
 
                         {/* GLASSMORPHISM ПЛАШКА */}
-
                         <div className="absolute bottom-0 left-0 right-0 p-5 bg-black/40 backdrop-blur-md border-t border-white/10 flex justify-between items-end gap-4 transition-colors duration-300 group-hover/item:bg-black/60">
                             <h4 className="font-jane text-xl sm:text-2xl tracking-wide line-clamp-2 text-white text-shadow-lg">
-                                {item.title}
+                                {/* 5. Берем название из исторического снимка чека */}
+                                {item.titleAtOrder}
                             </h4>
                         </div>
                     </Link>

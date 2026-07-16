@@ -50,7 +50,12 @@ export async function GET(req: NextRequest) {
 
                         // Мгновенно возвращаем товары в продажу
                         await tx.product.updateMany({
-                            where: { orderId, status: ProductStatus.RESERVED },
+                            where: {
+                                orderItems: {
+                                    some: { orderId: orderId }, // Ищем через промежуточную таблицу
+                                },
+                                status: ProductStatus.RESERVED,
+                            },
                             data: {
                                 status: ProductStatus.AVAILABLE,
                                 reservedUntil: null,

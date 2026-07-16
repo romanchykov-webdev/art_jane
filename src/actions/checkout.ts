@@ -100,7 +100,13 @@ export async function createCheckoutSession(
                     shippingState: customer.state ?? null,
                     totalAmount,
                     expiresAt: reservedUntil,
-                    items: { connect: productIds.map(id => ({ id })) },
+                    items: {
+                        create: lockedProducts.map(p => ({
+                            productId: p.id,
+                            priceAtOrder: p.price,
+                            titleAtOrder: p.title,
+                        })),
+                    },
                 },
                 select: { id: true },
             });
@@ -166,11 +172,7 @@ export async function createCheckoutSession(
             // UPDATE при отмене меняем статус на CANCELLED
             prisma.order.update({
                 where: { id: result.orderId },
-                data: {
-                    status: 'CANCELLED',
-                    // Отвязываем связи в сводной таблице, чтобы не было конфликтов
-                    items: { disconnect: productIds.map(id => ({ id })) },
-                },
+                data: { status: 'CANCELLED' },
             }),
         ]);
 

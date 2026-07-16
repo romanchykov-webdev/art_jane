@@ -54,8 +54,10 @@ model Product {
   categoryId         String
   category           Category      @relation(fields: [categoryId], references: [id])
   
-  orderId            String?
-  order              Order?        @relation(fields: [orderId], references: [id])
+  // orderId            String?
+  // order              Order?        @relation(fields: [orderId], references: [id])
+  // для истории заказа
+  orderItems         OrderItem[]
 
   // СВЯЗИ ДЛЯ КОРЗИНЫ И ИЗБРАННОГО
   favorites          Favorite[]
@@ -100,7 +102,9 @@ model Order {
 
   stripeSessionId  String?     @unique
   
-  items            Product[]
+  // items            Product[]
+  // СТАЛО: Заказ теперь ссылается на строки чека, а не напрямую на товары
+  items            OrderItem[]
 
   expiresAt        DateTime?   
 
@@ -111,6 +115,28 @@ model Order {
   @@index([userId]) //Индекс для быстрого поиска заказов юзера
   @@index([guestId])          // + NEW
   @@index([status, expiresAt]) // + NEW: для крона, чистящего протухшие PENDING-заказы
+}
+
+// история заказов 
+model OrderItem {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 1. Связь с заказом (Если удалят заказ, удалятся и его строки)
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // 2. Связь с товаром (Навсегда сохраняет факт участия товара в чеке)
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+
+  // 3. Финансовый и визуальный "Снимок" на момент нажатия кнопки Оплатить
+  priceAtOrder Int
+  titleAtOrder String
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model Category {
