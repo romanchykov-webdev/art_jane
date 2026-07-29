@@ -1,4 +1,5 @@
 import { ButtonGoHome } from '@/components/shared/button-go-home';
+import { ClearCartOnSuccess } from '@/components/shared/checkout/clear-cart-on-success';
 
 interface PageProps {
     searchParams: Promise<{ session_id?: string }>;
@@ -18,6 +19,7 @@ export default async function Page({ searchParams }: PageProps) {
                     Сессия: {session_id}
                 </p>
             )}
+            <ClearCartOnSuccess />
         </div>
     );
 }

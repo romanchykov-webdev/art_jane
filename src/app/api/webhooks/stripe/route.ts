@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true });
 }
 
-// ✅ Успешная оплата: заказ → PAID, товары → SOLD
+// ✅ Успешная оплата: заказ → PAID, товары → SOLD, корзина → ОЧИЩАЕТСЯ
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const orderId = session.metadata?.orderId;
     if (!orderId) {
@@ -87,13 +87,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     await prisma.$transaction(async tx => {
         const order = await tx.order.findUnique({
             where: { id: orderId },
-            select: { id: true, status: true },
+            // ИЗМЕНЕНИЕ 1: Тянем userId покупателя и id товаров из чека
+            select: {
+                id: true,
+                status: true,
+                userId: true,
+                items: { select: { productId: true } },
+            },
         });
 
         // 🔥 Идемпотентность: Обрабатываем только PENDING
         if (!order || order.status !== 'PENDING') return;
 
-        // Обновляем ТОЛЬКО статус.
+        // Обновляем ТОЛЬКО статус заказа
         await tx.order.update({
             where: { id: orderId },
             data: { status: 'PAID' },
@@ -102,12 +108,24 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         // Снимаем бронь и фиксируем продажу
         await tx.product.updateMany({
             where: {
-                orderItems: {
-                    some: { orderId: orderId },
-                },
+                orderItems: { some: { orderId: orderId } },
+                // ИЗМЕНЕНИЕ 3: Защита от гонки. Обновляем только зарезервированные товары
+                status: ProductStatus.RESERVED,
             },
             data: { status: ProductStatus.SOLD, reservedUntil: null },
         });
+
+        // ИЗМЕНЕНИЕ 2: Очистка корзины в БД
+        if (order.userId) {
+            // Проверяем, что заказ привязан к юзеру
+            await tx.cartItem.deleteMany({
+                where: {
+                    userId: order.userId,
+                    // Превращаем массив объектов [{productId: '1'}, ...] в плоский массив ['1', ...]
+                    productId: { in: order.items.map(item => item.productId) },
+                },
+            });
+        }
     });
 }
 

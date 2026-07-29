@@ -60,7 +60,7 @@ export default async function Home() {
         (settings?.heroSequenceFolder as StorageFolder) ?? 'sequence';
     const sequenceFrameCount = settings?.heroSequenceFrameCount ?? 174;
 
-    // TODO после оплаты товара через stripe товар не переходит в раздел купленых а остаеться в карзине
+    // TODO на странице товара у купленого товара вместо добавить в корзину должно быть SOLD OUT
 
     return (
         <>
