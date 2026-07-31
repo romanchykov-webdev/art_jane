@@ -7,12 +7,14 @@ interface Props {
     className?: string;
     productIds: string[];
     initialUserDetails: Partial<CustomerInfo> | null;
+    expectedTotal: number;
 }
 
 export const CheckoutContactInfo: React.FC<Props> = ({
     className,
     productIds,
     initialUserDetails,
+    expectedTotal,
 }): JSX.Element => {
     return (
         <section className={cn('lg:col-span-3', className)}>
@@ -23,6 +25,7 @@ export const CheckoutContactInfo: React.FC<Props> = ({
                 <CheckoutForm
                     productIds={productIds}
                     initialUserDetails={initialUserDetails}
+                    expectedTotal={expectedTotal}
                 />
             </div>
         </section>

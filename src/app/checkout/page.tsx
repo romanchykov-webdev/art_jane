@@ -48,7 +48,9 @@ export default async function CheckoutPage() {
             };
         }
     }
-    console.log('CheckoutPage:', { userData });
+    // console.log('CheckoutPage:', { userData });
+
+    const totalAmountInCents = cart.reduce((sum, item) => sum + item.price, 0);
 
     return (
         <div className="min-h-screen w-full pt-32 pb-20 px-4 sm:px-6 lg:px-12 bg-black text-white relative">
@@ -60,6 +62,7 @@ export default async function CheckoutPage() {
                     <CheckoutContactInfo
                         productIds={cart.map(item => item.id)}
                         initialUserDetails={userData}
+                        expectedTotal={totalAmountInCents}
                     />
 
                     {/* ПРАВАЯ КОЛОНКА (40%) — Order Summary */}

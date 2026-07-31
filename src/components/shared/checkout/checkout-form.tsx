@@ -27,6 +27,7 @@ import { useEffect, useState, useTransition } from 'react';
 interface Props {
     productIds: string[];
     initialUserDetails: Partial<CustomerInfo> | null;
+    expectedTotal: number;
 }
 
 // Кастомный компонент для PhoneInput, чтобы он использовал стили shadcn
@@ -42,7 +43,11 @@ const CustomPhoneInput = forwardRef<
 ));
 CustomPhoneInput.displayName = 'CustomPhoneInput';
 
-export function CheckoutForm({ productIds, initialUserDetails }: Props) {
+export function CheckoutForm({
+    productIds,
+    initialUserDetails,
+    expectedTotal,
+}: Props) {
     const [isPending, startTransition] = useTransition();
     const [serverError, setServerError] = useState<string | null>(null);
 
@@ -88,15 +93,21 @@ export function CheckoutForm({ productIds, initialUserDetails }: Props) {
 
     const onSubmit = (data: CustomerInfo) => {
         setServerError(null);
-        console.log('data', data);
+        // console.log('data', data);
         startTransition(async () => {
             try {
-                const url = await createCheckoutSession(data, productIds);
-                if (!url) {
-                    setServerError('Не удалось получить ссылку на оплату');
+                const result = await createCheckoutSession(
+                    data,
+                    productIds,
+                    expectedTotal
+                );
+
+                if (!result.ok) {
+                    setServerError(result.message);
                     return;
                 }
-                window.location.href = url;
+
+                window.location.href = result.url;
             } catch (err) {
                 setServerError(
                     err instanceof Error ? err.message : 'Что-то пошло не так'
