@@ -16,7 +16,7 @@ export default function Page() {
             <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                     href="/checkout"
-                    className="h-12 px-8 inline-flex items-center justify-center rounded-full font-jane text-sm tracking-widest bg-amber-500 text-black hover:bg-amber-600 transition-colors"
+                    className="h-12 px-8 pt-1 flex items-center justify-center rounded-full font-jane text-sm tracking-widest bg-amber-500 text-black hover:bg-amber-600 transition-colors"
                 >
                     ОФОРМИТЬ ЗАНОВО
                 </Link>

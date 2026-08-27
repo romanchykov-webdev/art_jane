@@ -3,10 +3,8 @@ import { HomeIcon } from 'lucide-react';
 import Link from 'next/link';
 import { ComponentPropsWithoutRef } from 'react';
 
-interface ButtonGoHomeProps extends Omit<
-    ComponentPropsWithoutRef<typeof Link>,
-    'href'
-> {
+interface ButtonGoHomeProps
+    extends Omit<ComponentPropsWithoutRef<typeof Link>, 'href'> {
     size?: 'sm' | 'md' | 'lg';
     href?: string;
 }

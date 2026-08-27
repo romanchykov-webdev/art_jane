@@ -1,5 +1,6 @@
 'use client';
 
+import { createCheckoutSession } from '@/actions/checkout';
 import {
     Form,
     FormControl,
@@ -8,21 +9,25 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
-
 import { Input } from '@/components/ui/input';
 import {
     customerInfoSchema,
     type CustomerInfo,
 } from '@/lib/validations/checkout';
+import { useCheckoutStore } from '@/store/checkout';
+import { type CheckoutFailure } from '@/types/checkout';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { forwardRef, InputHTMLAttributes } from 'react';
+import {
+    forwardRef,
+    useEffect,
+    useRef,
+    useTransition,
+    type FormEvent,
+    type InputHTMLAttributes,
+} from 'react';
 import { useForm } from 'react-hook-form';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-
-import { createCheckoutSession } from '@/actions/checkout';
-import { useCheckoutStore } from '@/store/checkout';
-import { useEffect, useState, useTransition } from 'react';
 
 interface Props {
     productIds: string[];
@@ -49,15 +54,30 @@ export function CheckoutForm({
     expectedTotal,
 }: Props) {
     const [isPending, startTransition] = useTransition();
-    const [serverError, setServerError] = useState<string | null>(null);
 
-    // Берём сеттер флага оформления из общего стора
+    // Подписки на стор
     const setCheckingOut = useCheckoutStore(s => s.setCheckingOut);
     const setFormValid = useCheckoutStore(s => s.setFormValid);
+    // ✅ ЕДИНООБРАЗНЫЙ ИСТОЧНИК ИСТИНЫ: Берем флаги напрямую из стора.
+    // Локальный useState для isRedirecting оставлял кнопку сабмита слепой —
+    // она читала стор, куда никто не писал, и надпись «Redirecting to Payment...»
+    // не показывалась ни разу.
+    const isCheckingOut = useCheckoutStore(s => s.isCheckingOut);
+    const isRedirecting = useCheckoutStore(s => s.isRedirecting);
+    const setRedirecting = useCheckoutStore(s => s.setRedirecting);
+
+    // ⚡ Монотонный счётчик поколений: отбрасывает ответы старых запросов
+    const requestIdRef = useRef(0);
+
+    // 🔥 Синхронный лок: блокирует повторные клики до старта транзишена
+    const submitLockRef = useRef(false);
+
+    // 🛡️ WATCHDOG: Таймер на случай отмененной навигации на Stripe
+    const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const form = useForm<CustomerInfo>({
         resolver: zodResolver(customerInfoSchema),
-        mode: 'onChange', //  onChange для мгновенной реакции кнопки
+        mode: 'onChange',
         defaultValues: {
             firstName: initialUserDetails?.firstName || '',
             lastName: initialUserDetails?.lastName || '',
@@ -78,61 +98,124 @@ export function CheckoutForm({
         setCheckingOut(isPending);
     }, [isPending, setCheckingOut]);
 
-    // Синхронизация состояния валидности формы с внешним миром (CheckoutAside)
+    // Синхронизация валидности формы со стором
     useEffect(() => {
         setFormValid(isValid);
     }, [isValid, setFormValid]);
 
-    // Сброс флагов при демонтаже
+    // ✅ Идемпотентный cleanup: зачищает таймеры и отменяет запросы в полёте
     useEffect(() => {
         return () => {
+            requestIdRef.current += 1;
+            submitLockRef.current = false;
+            if (redirectTimerRef.current) {
+                clearTimeout(redirectTimerRef.current);
+            }
             setCheckingOut(false);
             setFormValid(false);
+            useCheckoutStore.getState().clearError();
         };
     }, [setCheckingOut, setFormValid]);
 
+    // ЗАЩИТА ОТ BFCACHE (возврат по кнопке «Назад» из Stripe)
+    useEffect(() => {
+        const handlePageShow = (event: PageTransitionEvent) => {
+            if (!event.persisted) return;
+
+            if (redirectTimerRef.current) {
+                clearTimeout(redirectTimerRef.current);
+            }
+            requestIdRef.current += 1;
+            submitLockRef.current = false;
+            setCheckingOut(false);
+            // clearError() заодно снимает isRedirecting
+            useCheckoutStore.getState().clearError();
+        };
+
+        window.addEventListener('pageshow', handlePageShow);
+        return () => window.removeEventListener('pageshow', handlePageShow);
+    }, [setCheckingOut]);
+
     const onSubmit = (data: CustomerInfo) => {
-        setServerError(null);
-        // console.log('data', data);
+        // Захватываем лок сразу после успешной валидации Zod
+        if (submitLockRef.current) return;
+        submitLockRef.current = true;
+
+        useCheckoutStore.getState().clearError();
+
+        const reqId = ++requestIdRef.current;
+
         startTransition(async () => {
+            let isNavigating = false;
+
             try {
-                const result = await createCheckoutSession(
+                const res = await createCheckoutSession(
                     data,
                     productIds,
                     expectedTotal
                 );
 
-                if (!result.ok) {
-                    setServerError(result.message);
+                // Если поколение сменилось (был новый клик или анмаунт) — игнорируем
+                if (reqId !== requestIdRef.current) return;
+
+                if (!res.ok) {
+                    useCheckoutStore.getState().setError(res);
                     return;
                 }
 
-                window.location.href = result.url;
-            } catch (err) {
-                setServerError(
-                    err instanceof Error ? err.message : 'Что-то пошло не так'
-                );
+                isNavigating = true;
+                setRedirecting(true);
+
+                // 🛡️ WATCHDOG START: Если за 12 сек страница не сменилась (Esc / AdBlock), снимаем лок
+                redirectTimerRef.current = setTimeout(() => {
+                    submitLockRef.current = false;
+                    setRedirecting(false);
+                    setCheckingOut(false);
+                }, 12_000);
+
+                window.location.assign(res.url);
+            } catch (error) {
+                const isStale = reqId !== requestIdRef.current;
+                if (isStale) {
+                    console.warn('[CHECKOUT_SUBMIT_ABORTED]', error);
+                    return;
+                }
+                console.error('[CHECKOUT_SUBMIT_ERROR]', error);
+
+                const failure: CheckoutFailure = {
+                    ok: false,
+                    code: 'INTERNAL_ERROR',
+                    message: 'Ошибка сети. Проверьте подключение.',
+                };
+                useCheckoutStore.getState().setError(failure);
+            } finally {
+                // Если редирект не начался — сразу освобождаем лок
+                if (!isNavigating) {
+                    submitLockRef.current = false;
+                }
             }
         });
     };
 
+    // ✅ Блокируем форму по единому источнику истины из стора
+    const isFormDisabled = isCheckingOut || isRedirecting;
+
+    const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        // Пре-чек: отсекает лишние прогоны валидации во время запроса
+        if (submitLockRef.current || isRedirecting) return;
+        void form.handleSubmit(onSubmit)(e);
+    };
+
     return (
         <Form {...form}>
-            {isPending && (
-                <p className="text-amber-400 text-sm mb-4 animate-pulse">
-                    Создаём заказ и переходим к оплате…
-                </p>
-            )}
-            {serverError && (
-                <p className="text-rose-400 text-sm mb-4">{serverError}</p>
-            )}
             <form
                 id="checkout-form"
-                onSubmit={form.handleSubmit(onSubmit)}
+                onSubmit={onFormSubmit}
                 className="space-y-6"
             >
                 <fieldset
-                    disabled={isPending}
+                    disabled={isFormDisabled}
                     className="space-y-6 disabled:opacity-60"
                 >
                     {/* БЛОК 1: Личные данные */}
@@ -218,11 +301,10 @@ export function CheckoutForm({
                                             defaultCountry="IT"
                                             inputComponent={CustomPhoneInput}
                                             value={field.value}
-                                            // Перехватываем undefined
                                             onChange={val =>
                                                 field.onChange(val || '')
                                             }
-                                            className="flex w-full "
+                                            className="flex w-full"
                                         />
                                     </FormControl>
                                     <FormMessage className="text-rose-400" />

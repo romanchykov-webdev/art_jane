@@ -1,12 +1,12 @@
-import { ProductStatus } from '@/generated/prisma';
+import { auth } from '@/lib/auth';
+import { releaseOrder } from '@/lib/orders';
 import { prisma } from '@/lib/prisma';
+import { stripe } from '@/lib/stripe';
+import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 
-// Инициализируем Stripe версией API
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2026-06-24.dahlia',
-});
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
@@ -26,43 +26,15 @@ export async function GET(req: NextRequest) {
         // Если статус 'open', значит клиент нажал "Назад", и сессия еще жива.
         // Если статус другой (например, 'expired' или 'complete'), делать ничего не нужно.
         if (session.status === 'open') {
-            // 2. ПРИНУДИТЕЛЬНОЕ УБИЙСТВО СЕССИИ В STRIPE
-            // Теперь по этой ссылке больше нельзя будет заплатить
-            await stripe.checkout.sessions.expire(sessionId);
-
-            // 3. ОСВОБОЖДЕНИЕ ТОВАРОВ В БАЗЕ ДАННЫХ
             const orderId = session.metadata?.orderId;
 
-            if (orderId) {
-                await prisma.$transaction(async tx => {
-                    const order = await tx.order.findUnique({
-                        where: { id: orderId },
-                        select: { status: true },
-                    });
+            if (orderId && (await isOrderOwner(orderId))) {
+                // 2. ПРИНУДИТЕЛЬНОЕ УБИЙСТВО СЕССИИ В STRIPE
+                // Теперь по этой ссылке больше нельзя будет заплатить
+                await stripe.checkout.sessions.expire(sessionId);
 
-                    // Идемпотентность: меняем только если заказ всё ещё PENDING
-                    if (order && order.status === 'PENDING') {
-                        // Отменяем заказ
-                        await tx.order.update({
-                            where: { id: orderId },
-                            data: { status: 'CANCELLED' },
-                        });
-
-                        // Мгновенно возвращаем товары в продажу
-                        await tx.product.updateMany({
-                            where: {
-                                orderItems: {
-                                    some: { orderId: orderId }, // Ищем через промежуточную таблицу
-                                },
-                                status: ProductStatus.RESERVED,
-                            },
-                            data: {
-                                status: ProductStatus.AVAILABLE,
-                                reservedUntil: null,
-                            },
-                        });
-                    }
-                });
+                // 3. ОСВОБОЖДЕНИЕ ТОВАРОВ В БАЗЕ ДАННЫХ (идемпотентно)
+                await releaseOrder(orderId);
             }
         }
     } catch (error) {
@@ -72,8 +44,32 @@ export async function GET(req: NextRequest) {
         );
         // Мы логируем ошибку, но всё равно перенаправляем юзера на страницу отмены,
         // чтобы не показывать ему страшный белый экран с 500 ошибкой.
+        // Страховка на случай провала: вебхук `checkout.session.expired`
+        // и cron-воркер `/api/cron/release-reservations`.
     }
 
     // 4. Финальный редирект на визуальную страницу отмены
     return NextResponse.redirect(cancelPageUrl);
+}
+
+/**
+ * Роут открывается по ссылке из Stripe, то есть его URL с `session_id` оседает
+ * в истории браузера и в referrer. Поэтому отменяем заказ только тому, кто его
+ * создал — иначе чужой человек со ссылкой мог бы гасить чужие заказы.
+ *
+ * Если сессии нет или заказ чужой, бронь снимут штатные механизмы:
+ * вебхук `checkout.session.expired` (через 32 минуты) либо cron-воркер.
+ */
+async function isOrderOwner(orderId: string): Promise<boolean> {
+    const authSession = await auth.api.getSession({ headers: await headers() });
+    const userId = authSession?.user?.id;
+
+    if (!userId) return false;
+
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { userId: true },
+    });
+
+    return order?.userId === userId;
 }

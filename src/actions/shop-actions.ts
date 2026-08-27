@@ -214,3 +214,39 @@ export async function getShopState(): Promise<{
         return { cart: [], favorites: [] };
     }
 }
+
+//Пакетное удаление из БД
+// Теперь, когда модалка всплывет и скажет "Картины А и Б проданы",
+// по клику на кнопку "Удалить" мы должны удалить оба товара за один запрос.
+// Если делать это поштучно, Next.js сойдет с ума от
+// ревалидаций, и страница будет дико дергаться.
+export async function removeCartItemsAction(productIds: string[]) {
+    try {
+        if (!productIds || productIds.length === 0) {
+            return { success: true, removed: 0 };
+        }
+
+        const session = await auth.api.getSession({ headers: await headers() });
+        const userId = session?.user?.id;
+
+        if (!userId) {
+            return { success: false, error: 'Unauthorized' };
+        }
+
+        // Выполняем массовое удаление атомарно (за 1 запрос в БД)
+        const result = await prisma.cartItem.deleteMany({
+            where: {
+                userId,
+                productId: { in: productIds },
+            },
+        });
+
+        // Ревалидируем весь layout, чтобы и страница чекаута, и хедер обновились
+        revalidatePath('/', 'layout');
+
+        return { success: true, removed: result.count };
+    } catch (error) {
+        console.error('[REMOVE_CART_ITEMS_ERROR]', error);
+        return { success: false, error: 'Failed to remove items' };
+    }
+}

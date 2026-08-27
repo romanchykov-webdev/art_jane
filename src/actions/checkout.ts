@@ -2,7 +2,9 @@
 
 import { ProductStatus } from '@/generated/prisma';
 import { auth } from '@/lib/auth';
+import { releaseOrder } from '@/lib/orders';
 import { prisma } from '@/lib/prisma';
+import { stripe } from '@/lib/stripe';
 import {
     customerInfoSchema,
     type CustomerInfo,
@@ -11,35 +13,17 @@ import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2026-06-24.dahlia',
-});
-
-export type CheckoutErrorCode =
-    | 'UNAUTHORIZED'
-    | 'VALIDATION_ERROR'
-    | 'CART_CHANGED'
-    | 'EMPTY_CART'
-    | 'PRODUCT_UNAVAILABLE'
-    | 'STRIPE_ERROR'
-    | 'PROCESSING_ERROR'
-    | 'INTERNAL_ERROR';
-
-export type CheckoutResult =
-    | { ok: true; url: string }
-    | {
-          ok: false;
-          code: CheckoutErrorCode;
-          message: string;
-          unavailableProductIds?: string[];
-          errorId?: string;
-      };
+import {
+    type CheckoutErrorCode,
+    type CheckoutResult,
+    type UnavailableProduct,
+} from '@/types/checkout';
 
 class TransactionError extends Error {
     constructor(
         public code: CheckoutErrorCode,
         message: string,
-        public unavailableProductIds?: string[]
+        public unavailableProducts?: UnavailableProduct[]
     ) {
         super(message);
     }
@@ -147,113 +131,15 @@ export async function createCheckoutSession(
         }
 
         // --- GARBAGE COLLECTOR & IDEMPOTENCY ---
-        const pendingOrders = await prisma.order.findMany({
-            where: { userId, status: 'PENDING' },
-            select: {
-                id: true,
-                stripeSessionId: true,
-                expiresAt: true,
-                totalAmount: true,
-                createdAt: true,
-                items: { select: { productId: true } },
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 5,
+        const gc = await collectPendingOrders({
+            userId,
+            serverSorted,
+            expectedTotal,
+            errorId,
         });
 
-        let reusedUrl: string | null = null;
-        const now = new Date();
-
-        for (const po of pendingOrders) {
-            if (!po.expiresAt) continue;
-
-            const ageMs = now.getTime() - po.createdAt.getTime();
-            const itemsSorted = po.items
-                .map(i => i.productId)
-                .sort()
-                .join(',');
-            const isMatch =
-                itemsSorted === serverSorted &&
-                po.totalAmount === expectedTotal;
-            const isFresh =
-                po.expiresAt.getTime() > now.getTime() + 5 * 60 * 1000;
-
-            let canCancelDb = true;
-
-            if (po.stripeSessionId) {
-                try {
-                    const s = await stripe.checkout.sessions.retrieve(
-                        po.stripeSessionId
-                    );
-
-                    // 1. Оплаченный заказ - блокируем создание нового!
-                    if (s.status === 'complete') {
-                        return {
-                            ok: false,
-                            code: 'PROCESSING_ERROR',
-                            message:
-                                'Ваш заказ уже оплачен и обрабатывается. Корзина скоро обновится.',
-                        };
-                    }
-
-                    // 2. Живой заказ
-                    if (s.status === 'open') {
-                        if (isMatch && isFresh && !reusedUrl) {
-                            reusedUrl = s.url;
-                            continue; // Переиспользуем, отменять не нужно
-                        }
-
-                        try {
-                            await stripe.checkout.sessions.expire(
-                                po.stripeSessionId
-                            );
-                        } catch (expireErr) {
-                            console.warn(
-                                `[ALARM_EXPIRE_FAILED] [${errorId}]`,
-                                getSafeErrorData(expireErr)
-                            );
-                            canCancelDb = false; // Stripe упал, оставляем базу в покое
-                        }
-                    }
-                    // Если status === 'expired', canCancelDb остается true (Stripe уже протух, чистим базу безопасно)
-                } catch {
-                    console.warn(
-                        `[CHECKOUT_RETRY_WARNING] [${errorId}] Failed to retrieve session ${po.id}`
-                    );
-                    canCancelDb = false; // Нет сети - не трогаем базу
-                }
-            } else if (ageMs < IN_FLIGHT_WINDOW_MS) {
-                // Заказ в полете (без ID), меньше 10 сек - защищаем от отмены и блокируем клик
-                return {
-                    ok: false,
-                    code: 'PROCESSING_ERROR',
-                    message:
-                        'Ваш заказ формируется. Пожалуйста, подождите пару секунд.',
-                };
-            }
-
-            if (canCancelDb) {
-                await prisma.$transaction([
-                    prisma.order.update({
-                        where: { id: po.id },
-                        data: { status: 'CANCELLED' },
-                    }),
-                    prisma.product.updateMany({
-                        where: {
-                            orderItems: { some: { orderId: po.id } },
-                            status: ProductStatus.RESERVED,
-                            reservedUntil: po.expiresAt,
-                        },
-                        data: {
-                            status: ProductStatus.AVAILABLE,
-                            reservedUntil: null,
-                        },
-                    }),
-                ]);
-            }
-        }
-
-        if (reusedUrl) return { ok: true, url: reusedUrl };
+        if (gc.blocked) return gc.blocked;
+        if (gc.reusedUrl) return { ok: true, url: gc.reusedUrl };
 
         // --- ФАЗА БД: БРОНИРОВАНИЕ ---
         const reservedUntil = new Date(
@@ -275,7 +161,7 @@ export async function createCheckoutSession(
                         SELECT id, status, price, title
                         FROM "Product"
                         WHERE id = ANY(${serverProductIds}::text[])
-                        ORDER BY id 
+                        ORDER BY id
                         FOR UPDATE
                     `;
 
@@ -293,7 +179,13 @@ export async function createCheckoutSession(
                         throw new TransactionError(
                             'PRODUCT_UNAVAILABLE',
                             `Некоторые товары уже забронированы или проданы`,
-                            unavailable.map(p => p.id)
+                            unavailable.map(p => ({
+                                id: p.id,
+                                reason:
+                                    p.status === ProductStatus.SOLD
+                                        ? ('SOLD' as const)
+                                        : ('RESERVED' as const),
+                            }))
                         );
                     }
 
@@ -355,8 +247,8 @@ export async function createCheckoutSession(
                     ok: false,
                     code: txError.code,
                     message: txError.message,
-                    ...(txError.unavailableProductIds && {
-                        unavailableProductIds: txError.unavailableProductIds,
+                    ...(txError.unavailableProducts && {
+                        unavailableProducts: txError.unavailableProducts,
                     }),
                 };
             }
@@ -403,32 +295,12 @@ export async function createCheckoutSession(
                 error instanceof Stripe.errors.StripeConnectionError ||
                 error instanceof Stripe.errors.StripeAPIError;
 
+            // При сетевой ошибке заказ мог всё-таки создаться на стороне Stripe,
+            // поэтому бронь не снимаем — её разберёт вебхук или cron-воркер.
             if (!isNetworkError) {
-                await prisma
-                    .$transaction([
-                        prisma.order.update({
-                            where: { id: transactionResult.orderId },
-                            data: { status: 'CANCELLED' },
-                        }),
-                        prisma.product.updateMany({
-                            where: {
-                                orderItems: {
-                                    some: {
-                                        orderId: transactionResult.orderId,
-                                    },
-                                },
-                                status: ProductStatus.RESERVED,
-                                reservedUntil,
-                            },
-                            data: {
-                                status: ProductStatus.AVAILABLE,
-                                reservedUntil: null,
-                            },
-                        }),
-                    ])
-                    .catch(() =>
-                        console.error(`[ALARM_ROLLBACK_FAILED] [${errorId}]`)
-                    );
+                await releaseOrder(transactionResult.orderId).catch(() =>
+                    console.error(`[ALARM_ROLLBACK_FAILED] [${errorId}]`)
+                );
             }
 
             return {
@@ -478,4 +350,147 @@ export async function createCheckoutSession(
             errorId,
         };
     }
+}
+
+type GcOutcome = {
+    /** Ответ, который надо отдать клиенту немедленно, не создавая новый заказ. */
+    blocked?: Extract<CheckoutResult, { ok: false }>;
+    /** Ссылка на живую сессию Stripe, которую можно переиспользовать. */
+    reusedUrl?: string;
+};
+
+/**
+ * Разбирает незакрытые PENDING-заказы пользователя перед созданием нового.
+ *
+ * Живую сессию с тем же составом и суммой переиспользуем, протухшие гасим
+ * и возвращаем товары в продажу, уже оплаченную — блокируем, чтобы человек
+ * не заплатил дважды за вещь, существующую в одном экземпляре.
+ */
+async function collectPendingOrders({
+    userId,
+    serverSorted,
+    expectedTotal,
+    errorId,
+}: {
+    userId: string;
+    serverSorted: string;
+    expectedTotal: number;
+    errorId: string;
+}): Promise<GcOutcome> {
+    const pendingOrders = await prisma.order.findMany({
+        where: { userId, status: 'PENDING' },
+        select: {
+            id: true,
+            stripeSessionId: true,
+            expiresAt: true,
+            totalAmount: true,
+            createdAt: true,
+            items: { select: { productId: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+    });
+
+    if (pendingOrders.length === 0) return {};
+
+    // Состояния сессий тянем параллельно: последовательные round-trip'ы
+    // к Stripe добавляли по секунде к каждому клику «Proceed to Payment».
+    const states = await Promise.all(
+        pendingOrders.map(async po => {
+            if (!po.stripeSessionId) {
+                return { po, session: null, retrieveFailed: false };
+            }
+            try {
+                const session = await stripe.checkout.sessions.retrieve(
+                    po.stripeSessionId
+                );
+                return { po, session, retrieveFailed: false };
+            } catch {
+                console.warn(
+                    `[CHECKOUT_RETRY_WARNING] [${errorId}] Failed to retrieve session ${po.id}`
+                );
+                return { po, session: null, retrieveFailed: true };
+            }
+        })
+    );
+
+    const now = new Date();
+
+    // Сначала — стоп-проверки по всем заказам сразу. Раньше они срабатывали
+    // по ходу цикла, и заказ, встреченный до уже оплаченного, успевал получить
+    // ненужный expire перед тем, как выполнение прерывалось.
+    for (const { po, session } of states) {
+        if (session?.status === 'complete') {
+            return {
+                blocked: {
+                    ok: false,
+                    code: 'PROCESSING_ERROR',
+                    message:
+                        'Ваш заказ уже оплачен и обрабатывается. Корзина скоро обновится.',
+                },
+            };
+        }
+
+        // Заказ в полёте: Stripe-сессия ещё создаётся параллельным запросом.
+        if (
+            !po.stripeSessionId &&
+            now.getTime() - po.createdAt.getTime() < IN_FLIGHT_WINDOW_MS
+        ) {
+            return {
+                blocked: {
+                    ok: false,
+                    code: 'PROCESSING_ERROR',
+                    message:
+                        'Ваш заказ формируется. Пожалуйста, подождите пару секунд.',
+                },
+            };
+        }
+    }
+
+    let reusedUrl: string | null = null;
+
+    for (const { po, session, retrieveFailed } of states) {
+        if (!po.expiresAt) continue;
+
+        const itemsSorted = po.items
+            .map(i => i.productId)
+            .sort()
+            .join(',');
+        const isMatch =
+            itemsSorted === serverSorted && po.totalAmount === expectedTotal;
+        const isFresh = po.expiresAt.getTime() > now.getTime() + 5 * 60 * 1000;
+
+        // Нет связи со Stripe — базу не трогаем, иначе можно освободить товар,
+        // за который человек прямо сейчас платит.
+        let canCancelDb = !retrieveFailed;
+
+        if (session?.status === 'open') {
+            // session.url имеет тип string | null. Без проверки на null код
+            // уходил в continue, не отменив заказ: товары оставались
+            // забронированными собственным заказом пользователя, а следующая
+            // попытка падала с PRODUCT_UNAVAILABLE до истечения сессии.
+            if (isMatch && isFresh && session.url && !reusedUrl) {
+                reusedUrl = session.url;
+                continue; // Переиспользуем, отменять не нужно
+            }
+
+            try {
+                await stripe.checkout.sessions.expire(po.stripeSessionId!);
+            } catch (expireErr) {
+                console.warn(
+                    `[ALARM_EXPIRE_FAILED] [${errorId}]`,
+                    getSafeErrorData(expireErr)
+                );
+                canCancelDb = false; // Stripe упал, оставляем базу в покое
+            }
+        }
+        // Если status === 'expired', canCancelDb остаётся true
+        // (Stripe уже протух, чистим базу безопасно)
+
+        if (canCancelDb) {
+            await releaseOrder(po.id);
+        }
+    }
+
+    return reusedUrl ? { reusedUrl } : {};
 }

@@ -1,5 +1,5 @@
-import { ProductStatus } from '@/generated/prisma';
-import { prisma } from '@/lib/prisma';
+import { fulfillOrder, releaseOrder } from '@/lib/orders';
+import { isSessionPaid, stripe } from '@/lib/stripe';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
@@ -7,10 +7,6 @@ import Stripe from 'stripe';
 export const runtime = 'nodejs';
 // Отключаем кэширование — вебхук всегда динамический
 export const dynamic = 'force-dynamic';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2026-06-24.dahlia',
-});
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -46,16 +42,38 @@ export async function POST(req: Request) {
     // 3. Обрабатываем нужные события
     try {
         switch (event.type) {
+            // Сессия завершена. Для карт деньги уже получены, для методов
+            // с отложенным подтверждением — ещё нет, ждём async-события ниже.
             case 'checkout.session.completed': {
-                const session = event.data.object as Stripe.Checkout.Session;
-                await handleCheckoutCompleted(session);
+                const session = event.data.object;
+
+                if (!isSessionPaid(session)) {
+                    console.info(
+                        `[STRIPE_WEBHOOK] Сессия ${session.id} завершена без оплаты ` +
+                            `(payment_status=${session.payment_status}). Бронь сохранена, ждём async-события.`
+                    );
+                    break;
+                }
+
+                await handleWithOrderId(session, fulfillOrder);
+                break;
+            }
+
+            // Отложенный платёж дошёл — фиксируем продажу
+            case 'checkout.session.async_payment_succeeded': {
+                await handleWithOrderId(event.data.object, fulfillOrder);
+                break;
+            }
+
+            // Отложенный платёж не прошёл — возвращаем товар в продажу
+            case 'checkout.session.async_payment_failed': {
+                await handleWithOrderId(event.data.object, releaseOrder);
                 break;
             }
 
             // Сессия протухла (пользователь не оплатил за отведённое время)
             case 'checkout.session.expired': {
-                const session = event.data.object as Stripe.Checkout.Session;
-                await handleCheckoutExpired(session);
+                await handleWithOrderId(event.data.object, releaseOrder);
                 break;
             }
 
@@ -76,86 +94,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true });
 }
 
-// ✅ Успешная оплата: заказ → PAID, товары → SOLD, корзина → ОЧИЩАЕТСЯ
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+/**
+ * Достаёт orderId из metadata сессии и передаёт его в идемпотентный обработчик
+ * из `@/lib/orders`. Отсутствие orderId — не повод возвращать 500: ретраи
+ * Stripe ничего не починят, такое событие нужно просто залогировать.
+ */
+async function handleWithOrderId(
+    session: Stripe.Checkout.Session,
+    handler: (orderId: string) => Promise<boolean>
+) {
     const orderId = session.metadata?.orderId;
+
     if (!orderId) {
-        console.error('[STRIPE_WEBHOOK] В metadata нет orderId');
+        console.error(
+            `[STRIPE_WEBHOOK] В metadata сессии ${session.id} нет orderId`
+        );
         return;
     }
 
-    await prisma.$transaction(async tx => {
-        const order = await tx.order.findUnique({
-            where: { id: orderId },
-            // ИЗМЕНЕНИЕ 1: Тянем userId покупателя и id товаров из чека
-            select: {
-                id: true,
-                status: true,
-                userId: true,
-                items: { select: { productId: true } },
-            },
-        });
-
-        // 🔥 Идемпотентность: Обрабатываем только PENDING
-        if (!order || order.status !== 'PENDING') return;
-
-        // Обновляем ТОЛЬКО статус заказа
-        await tx.order.update({
-            where: { id: orderId },
-            data: { status: 'PAID' },
-        });
-
-        // Снимаем бронь и фиксируем продажу
-        await tx.product.updateMany({
-            where: {
-                orderItems: { some: { orderId: orderId } },
-                // ИЗМЕНЕНИЕ 3: Защита от гонки. Обновляем только зарезервированные товары
-                status: ProductStatus.RESERVED,
-            },
-            data: { status: ProductStatus.SOLD, reservedUntil: null },
-        });
-
-        // ИЗМЕНЕНИЕ 2: Очистка корзины в БД
-        if (order.userId) {
-            // Проверяем, что заказ привязан к юзеру
-            await tx.cartItem.deleteMany({
-                where: {
-                    userId: order.userId,
-                    // Превращаем массив объектов [{productId: '1'}, ...] в плоский массив ['1', ...]
-                    productId: { in: order.items.map(item => item.productId) },
-                },
-            });
-        }
-    });
-}
-
-// ⏱️ Сессия истекла: освобождаем товары, отменяем заказ
-async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
-    const orderId = session.metadata?.orderId;
-    if (!orderId) return;
-
-    await prisma.$transaction(async tx => {
-        const order = await tx.order.findUnique({
-            where: { id: orderId },
-            select: { id: true, status: true },
-        });
-
-        if (!order || order.status !== 'PENDING') return;
-
-        await tx.order.update({
-            where: { id: orderId },
-            data: { status: 'CANCELLED' },
-        });
-
-        // Возвращаем товары в продажу, только если они всё ещё зарезервированы
-        await tx.product.updateMany({
-            where: {
-                orderItems: {
-                    some: { orderId: orderId },
-                },
-                status: ProductStatus.RESERVED,
-            },
-            data: { status: ProductStatus.AVAILABLE, reservedUntil: null },
-        });
-    });
+    await handler(orderId);
 }
