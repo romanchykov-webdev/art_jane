@@ -112,5 +112,12 @@ async function handleWithOrderId(
         return;
     }
 
-    await handler(orderId);
+    const result = await handler(orderId);
+
+    if (!result && handler === fulfillOrder) {
+        console.error(
+            `[ALARM_ORPHAN_PAYMENT] Платёж получен, но заказ ${orderId} не находится в статусе PENDING. ` +
+                `Возможно, он уже завершён, отменён или удалён. Требуется проверка.`
+        );
+    }
 }

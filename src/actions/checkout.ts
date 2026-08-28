@@ -265,6 +265,7 @@ export async function createCheckoutSession(
             checkoutSession = await stripe.checkout.sessions.create(
                 {
                     mode: 'payment',
+                    payment_method_types: ['card'],
                     customer_email: customer.email,
                     expires_at: stripeExpiresAt,
                     line_items: transactionResult.products.map(p => ({

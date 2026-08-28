@@ -24,7 +24,7 @@ export const customerInfoSchema = z.object({
         .string()
         .trim()
         .toLowerCase()
-        .min(1, 'Введите email')
+        .email('Некорректный email адрес')
         .max(255, 'Email слишком длинный'),
 
     // react-phone-number-input при пустом инпуте возвращает undefined,
