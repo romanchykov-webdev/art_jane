@@ -1,9 +1,9 @@
-import { getShopState } from '@/actions/shop-actions';
 import { CheckoutAside } from '@/components/shared/checkout/checkout-aside';
 import { CheckoutContactInfo } from '@/components/shared/checkout/checkout-contact-info';
 import { CheckoutErrorDialog } from '@/components/shared/checkout/checkout-error-dialog';
 import { CheckoutHeader } from '@/components/shared/checkout/checkout-header';
 import { auth } from '@/lib/auth';
+import { mapToStoreProduct } from '@/lib/mappers';
 import { prisma } from '@/lib/prisma';
 import { StoreProduct } from '@/types/product';
 import { type UnavailableProduct } from '@/types/checkout';
@@ -22,8 +22,13 @@ export default async function CheckoutPage() {
         redirect('/');
     }
 
-    // Читаем корзину на сервере по сессии пользователя
-    const { cart } = await getShopState();
+    // Читаем корзину напрямую из БД по сессии пользователя (без try/catch, ошибки всплывают в error.tsx)
+    const cartItems = await prisma.cartItem.findMany({
+        where: { userId: session.user.id },
+        include: { product: true },
+        orderBy: { createdAt: 'asc' },
+    });
+    const cart = cartItems.map(mapToStoreProduct);
 
     // 2. Достаем данные юзера для формы
     const dbUser = await prisma.user.findUnique({
