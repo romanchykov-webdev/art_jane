@@ -2,6 +2,7 @@
 
 import { ProductStatus } from '@/generated/prisma';
 import { auth } from '@/lib/auth';
+import { acquireCheckoutLock, releaseCheckoutLock } from '@/lib/checkout-lock';
 import { releaseOrder } from '@/lib/orders';
 import { prisma } from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
@@ -31,7 +32,6 @@ class TransactionError extends Error {
 
 const DB_RESERVATION_MINUTES = 40;
 const STRIPE_SESSION_MINUTES = 32;
-const IN_FLIGHT_WINDOW_MS = 10000;
 
 type TxResult = {
     orderId: string;
@@ -102,242 +102,275 @@ export async function createCheckoutSession(
         }
         const customer = parsed.data;
 
-        const cartItems = await prisma.cartItem.findMany({
-            where: { userId },
-            select: { productId: true },
-        });
-        const serverProductIds = cartItems.map(item => item.productId);
+        // Захват мьютекса ДО чтения корзины: GC тоже обязан идти под локом,
+        // иначе параллельный запрос успеет отменить заказ, который прямо
+        // сейчас ждёт ответа от Stripe, — и покупатель заплатит за вещь,
+        // уже уехавшую в CANCELLED.
+        //
+        // Токеном служит errorId: он уже сгенерирован и попадает в логи,
+        // так что зависший лок сопоставляется с конкретным запросом.
+        const lockAcquired = await acquireCheckoutLock(userId, errorId);
 
-        if (!serverProductIds.length) {
-            revalidatePath('/checkout');
+        if (!lockAcquired) {
             return {
                 ok: false,
-                code: 'EMPTY_CART',
-                message: 'Ваша корзина пуста',
-            };
-        }
-
-        const expectedSorted = [...expectedProductIds].sort().join(',');
-        const serverSorted = [...serverProductIds].sort().join(',');
-
-        if (expectedSorted !== serverSorted) {
-            revalidatePath('/checkout');
-            return {
-                ok: false,
-                code: 'CART_CHANGED',
+                code: 'PROCESSING_ERROR',
                 message:
-                    'Состав корзины изменился. Пожалуйста, проверьте корзину.',
+                    'Ваш заказ формируется. Пожалуйста, подождите пару секунд.',
             };
         }
-
-        // --- GARBAGE COLLECTOR & IDEMPOTENCY ---
-        const gc = await collectPendingOrders({
-            userId,
-            serverSorted,
-            expectedTotal,
-            errorId,
-        });
-
-        if (gc.blocked) return gc.blocked;
-        if (gc.reusedUrl) return { ok: true, url: gc.reusedUrl };
-
-        // --- ФАЗА БД: БРОНИРОВАНИЕ ---
-        const reservedUntil = new Date(
-            Date.now() + DB_RESERVATION_MINUTES * 60 * 1000
-        );
-        let transactionResult: TxResult;
 
         try {
-            transactionResult = await prisma.$transaction(
-                async tx => {
-                    const lockedProducts = await tx.$queryRaw<
-                        {
-                            id: string;
-                            status: ProductStatus;
-                            price: number;
-                            title: string;
-                        }[]
-                    >`
-                        SELECT id, status, price, title
-                        FROM "Product"
-                        WHERE id = ANY(${serverProductIds}::text[])
-                        ORDER BY id
-                        FOR UPDATE
-                    `;
+            const cartItems = await prisma.cartItem.findMany({
+                where: { userId },
+                select: { productId: true },
+            });
+            const serverProductIds = cartItems.map(item => item.productId);
 
-                    if (lockedProducts.length !== serverProductIds.length) {
-                        throw new TransactionError(
-                            'PRODUCT_UNAVAILABLE',
-                            'Один из товаров больше не существует в каталоге'
-                        );
-                    }
-
-                    const unavailable = lockedProducts.filter(
-                        p => p.status !== ProductStatus.AVAILABLE
-                    );
-                    if (unavailable.length > 0) {
-                        throw new TransactionError(
-                            'PRODUCT_UNAVAILABLE',
-                            `Некоторые товары уже забронированы или проданы`,
-                            unavailable.map(p => ({
-                                id: p.id,
-                                reason:
-                                    p.status === ProductStatus.SOLD
-                                        ? ('SOLD' as const)
-                                        : ('RESERVED' as const),
-                            }))
-                        );
-                    }
-
-                    const totalAmount = lockedProducts.reduce(
-                        (sum, p) => sum + p.price,
-                        0
-                    );
-
-                    if (totalAmount !== expectedTotal) {
-                        throw new TransactionError(
-                            'CART_CHANGED',
-                            'Цена товаров изменилась. Пожалуйста, обновите страницу.'
-                        );
-                    }
-
-                    const order = await tx.order.create({
-                        data: {
-                            status: 'PENDING',
-                            userId: userId,
-                            customerEmail: customer.email,
-                            customerName: `${customer.firstName} ${customer.lastName}`,
-                            customerPhone: customer.phone,
-                            shippingCountry: customer.country,
-                            shippingCity: customer.city,
-                            shippingPostalCode: customer.postalCode,
-                            shippingStreet: customer.street,
-                            shippingState: customer.state ?? null,
-                            totalAmount,
-                            expiresAt: reservedUntil,
-                            items: {
-                                create: lockedProducts.map(p => ({
-                                    productId: p.id,
-                                    priceAtOrder: p.price,
-                                    titleAtOrder: p.title,
-                                })),
-                            },
-                        },
-                        select: { id: true },
-                    });
-
-                    await tx.product.updateMany({
-                        where: { id: { in: serverProductIds } },
-                        data: { status: ProductStatus.RESERVED, reservedUntil },
-                    });
-
-                    return { orderId: order.id, products: lockedProducts };
-                },
-                { timeout: 10000, maxWait: 5000 }
-            );
-        } catch (txError) {
-            if (txError instanceof TransactionError) {
-                if (
-                    txError.code === 'CART_CHANGED' ||
-                    txError.code === 'PRODUCT_UNAVAILABLE'
-                ) {
-                    revalidatePath('/checkout');
-                }
+            if (!serverProductIds.length) {
+                revalidatePath('/checkout');
                 return {
                     ok: false,
-                    code: txError.code,
-                    message: txError.message,
-                    ...(txError.unavailableProducts && {
-                        unavailableProducts: txError.unavailableProducts,
-                    }),
+                    code: 'EMPTY_CART',
+                    message: 'Ваша корзина пуста',
                 };
             }
-            throw txError;
-        }
 
-        // --- ФАЗА STRIPE ---
-        const stripeExpiresAt = Math.floor(
-            (Date.now() + STRIPE_SESSION_MINUTES * 60 * 1000) / 1000
-        );
-        let checkoutSession: Stripe.Checkout.Session;
+            const expectedSorted = [...expectedProductIds].sort().join(',');
+            const serverSorted = [...serverProductIds].sort().join(',');
 
-        try {
-            checkoutSession = await stripe.checkout.sessions.create(
-                {
-                    mode: 'payment',
-                    payment_method_types: ['card'],
-                    customer_email: customer.email,
-                    expires_at: stripeExpiresAt,
-                    line_items: transactionResult.products.map(p => ({
-                        quantity: 1,
-                        price_data: {
-                            currency: 'eur',
-                            unit_amount: p.price,
-                            product_data: { name: p.title },
-                        },
-                    })),
-                    metadata: { orderId: transactionResult.orderId },
-                    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-                    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/checkout/cancel?session_id={CHECKOUT_SESSION_ID}`,
-                },
-                {
-                    idempotencyKey: `order_${transactionResult.orderId}`,
-                }
-            );
-
-            if (!checkoutSession.url) {
-                throw new Error('NO_URL_FROM_STRIPE');
-            }
-        } catch (error: unknown) {
-            const safeError = getSafeErrorData(error);
-            console.error(`[CHECKOUT_STRIPE_ERROR] [${errorId}]`, safeError);
-
-            const isNetworkError =
-                error instanceof Stripe.errors.StripeConnectionError ||
-                error instanceof Stripe.errors.StripeAPIError;
-
-            // При сетевой ошибке заказ мог всё-таки создаться на стороне Stripe,
-            // поэтому бронь не снимаем — её разберёт вебхук или cron-воркер.
-            if (!isNetworkError) {
-                await releaseOrder(transactionResult.orderId).catch(() =>
-                    console.error(`[ALARM_ROLLBACK_FAILED] [${errorId}]`)
-                );
+            if (expectedSorted !== serverSorted) {
+                revalidatePath('/checkout');
+                return {
+                    ok: false,
+                    code: 'CART_CHANGED',
+                    message:
+                        'Состав корзины изменился. Пожалуйста, проверьте корзину.',
+                };
             }
 
-            return {
-                ok: false,
-                code: 'STRIPE_ERROR',
-                message:
-                    'Ошибка связи с платежной системой. Попробуйте еще раз.',
+            // --- GARBAGE COLLECTOR & IDEMPOTENCY ---
+            const gc = await collectPendingOrders({
+                userId,
+                serverSorted,
+                expectedTotal,
                 errorId,
-            };
-        }
-
-        // --- ДОЗАПИСЬ ID (И ФИКС ПРИЗРАЧНОЙ ССЫЛКИ) ---
-        try {
-            await prisma.order.update({
-                where: { id: transactionResult.orderId },
-                data: { stripeSessionId: checkoutSession.id },
             });
-        } catch (updateError) {
-            console.error(
-                `[ALARM_STRIPE_ID_SYNC_FAILED] [${errorId}]`,
-                getSafeErrorData(updateError)
-            );
-            // БАЗА УПАЛА. МЫ ОБЯЗАНЫ УБИТЬ ССЫЛКУ, ЧТОБЫ КЛИЕНТ НЕ ЗАПЛАТИЛ В НИКУДА.
-            await stripe.checkout.sessions
-                .expire(checkoutSession.id)
-                .catch(() => {});
-            return {
-                ok: false,
-                code: 'INTERNAL_ERROR',
-                message:
-                    'Ошибка синхронизации сессии. Пожалуйста, попробуйте еще раз.',
-                errorId,
-            };
-        }
 
-        return { ok: true, url: checkoutSession.url };
+            if (gc.blocked) return gc.blocked;
+            if (gc.reusedUrl) return { ok: true, url: gc.reusedUrl };
+
+            // --- ФАЗА БД: БРОНИРОВАНИЕ ---
+            const reservedUntil = new Date(
+                Date.now() + DB_RESERVATION_MINUTES * 60 * 1000
+            );
+            let transactionResult: TxResult;
+
+            try {
+                transactionResult = await prisma.$transaction(
+                    async tx => {
+                        const lockedProducts = await tx.$queryRaw<
+                            {
+                                id: string;
+                                status: ProductStatus;
+                                price: number;
+                                title: string;
+                            }[]
+                        >`
+                            SELECT id, status, price, title
+                            FROM "Product"
+                            WHERE id = ANY(${serverProductIds}::text[])
+                            ORDER BY id
+                            FOR UPDATE
+                        `;
+
+                        if (lockedProducts.length !== serverProductIds.length) {
+                            throw new TransactionError(
+                                'PRODUCT_UNAVAILABLE',
+                                'Один из товаров больше не существует в каталоге'
+                            );
+                        }
+
+                        const unavailable = lockedProducts.filter(
+                            p => p.status !== ProductStatus.AVAILABLE
+                        );
+                        if (unavailable.length > 0) {
+                            throw new TransactionError(
+                                'PRODUCT_UNAVAILABLE',
+                                `Некоторые товары уже забронированы или проданы`,
+                                unavailable.map(p => ({
+                                    id: p.id,
+                                    reason:
+                                        p.status === ProductStatus.SOLD
+                                            ? ('SOLD' as const)
+                                            : ('RESERVED' as const),
+                                }))
+                            );
+                        }
+
+                        const totalAmount = lockedProducts.reduce(
+                            (sum, p) => sum + p.price,
+                            0
+                        );
+
+                        if (totalAmount !== expectedTotal) {
+                            throw new TransactionError(
+                                'CART_CHANGED',
+                                'Цена товаров изменилась. Пожалуйста, обновите страницу.'
+                            );
+                        }
+
+                        const order = await tx.order.create({
+                            data: {
+                                status: 'PENDING',
+                                userId: userId,
+                                customerEmail: customer.email,
+                                customerName: `${customer.firstName} ${customer.lastName}`,
+                                customerPhone: customer.phone,
+                                shippingCountry: customer.country,
+                                shippingCity: customer.city,
+                                shippingPostalCode: customer.postalCode,
+                                shippingStreet: customer.street,
+                                shippingState: customer.state ?? null,
+                                totalAmount,
+                                expiresAt: reservedUntil,
+                                items: {
+                                    create: lockedProducts.map(p => ({
+                                        productId: p.id,
+                                        priceAtOrder: p.price,
+                                        titleAtOrder: p.title,
+                                    })),
+                                },
+                            },
+                            select: { id: true },
+                        });
+
+                        await tx.product.updateMany({
+                            where: { id: { in: serverProductIds } },
+                            data: {
+                                status: ProductStatus.RESERVED,
+                                reservedUntil,
+                            },
+                        });
+
+                        return { orderId: order.id, products: lockedProducts };
+                    },
+                    { timeout: 10000, maxWait: 5000 }
+                );
+            } catch (txError) {
+                if (txError instanceof TransactionError) {
+                    if (
+                        txError.code === 'CART_CHANGED' ||
+                        txError.code === 'PRODUCT_UNAVAILABLE'
+                    ) {
+                        revalidatePath('/checkout');
+                    }
+                    return {
+                        ok: false,
+                        code: txError.code,
+                        message: txError.message,
+                        ...(txError.unavailableProducts && {
+                            unavailableProducts: txError.unavailableProducts,
+                        }),
+                    };
+                }
+                throw txError;
+            }
+
+            // --- ФАЗА STRIPE ---
+            const stripeExpiresAt = Math.floor(
+                (Date.now() + STRIPE_SESSION_MINUTES * 60 * 1000) / 1000
+            );
+            let checkoutSession: Stripe.Checkout.Session;
+
+            try {
+                checkoutSession = await stripe.checkout.sessions.create(
+                    {
+                        mode: 'payment',
+                        payment_method_types: ['card'],
+                        customer_email: customer.email,
+                        expires_at: stripeExpiresAt,
+                        line_items: transactionResult.products.map(p => ({
+                            quantity: 1,
+                            price_data: {
+                                currency: 'eur',
+                                unit_amount: p.price,
+                                product_data: { name: p.title },
+                            },
+                        })),
+                        metadata: { orderId: transactionResult.orderId },
+                        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+                        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/checkout/cancel?session_id={CHECKOUT_SESSION_ID}`,
+                    },
+                    {
+                        idempotencyKey: `order_${transactionResult.orderId}`,
+                        timeout: 20000,
+                    }
+                );
+
+                if (!checkoutSession.url) {
+                    throw new Error('NO_URL_FROM_STRIPE');
+                }
+            } catch (error: unknown) {
+                const safeError = getSafeErrorData(error);
+                console.error(
+                    `[CHECKOUT_STRIPE_ERROR] [${errorId}]`,
+                    safeError
+                );
+
+                const isNetworkError =
+                    error instanceof Stripe.errors.StripeConnectionError ||
+                    error instanceof Stripe.errors.StripeAPIError;
+
+                // При сетевой ошибке заказ мог всё-таки создаться на стороне Stripe,
+                // поэтому бронь не снимаем — её разберёт вебхук или cron-воркер.
+                if (!isNetworkError) {
+                    await releaseOrder(transactionResult.orderId).catch(() =>
+                        console.error(`[ALARM_ROLLBACK_FAILED] [${errorId}]`)
+                    );
+                }
+
+                return {
+                    ok: false,
+                    code: 'STRIPE_ERROR',
+                    message:
+                        'Ошибка связи с платежной системой. Попробуйте еще раз.',
+                    errorId,
+                };
+            }
+
+            // --- ДОЗАПИСЬ ID (И ФИКС ПРИЗРАЧНОЙ ССЫЛКИ) ---
+            try {
+                await prisma.order.update({
+                    where: { id: transactionResult.orderId },
+                    data: { stripeSessionId: checkoutSession.id },
+                });
+            } catch (updateError) {
+                console.error(
+                    `[ALARM_STRIPE_ID_SYNC_FAILED] [${errorId}]`,
+                    getSafeErrorData(updateError)
+                );
+                // БАЗА УПАЛА. МЫ ОБЯЗАНЫ УБИТЬ ССЫЛКУ, ЧТОБЫ КЛИЕНТ НЕ ЗАПЛАТИЛ В НИКУДА.
+                await stripe.checkout.sessions
+                    .expire(checkoutSession.id)
+                    .catch(() => {});
+                return {
+                    ok: false,
+                    code: 'INTERNAL_ERROR',
+                    message:
+                        'Ошибка синхронизации сессии. Пожалуйста, попробуйте еще раз.',
+                    errorId,
+                };
+            }
+
+            return { ok: true, url: checkoutSession.url };
+        } finally {
+            // best-effort: если снять не удалось, лок сам протухнет по TTL
+            // и следующая попытка пользователя перехватит его.
+            await releaseCheckoutLock(userId, errorId).catch(() =>
+                console.error(`[ALARM_LOCK_RELEASE_FAILED] [${errorId}]`)
+            );
+        }
     } catch (globalError) {
         console.error(
             `[CHECKOUT_CRITICAL_ERROR] [${errorId}]`,
@@ -366,6 +399,13 @@ type GcOutcome = {
  * Живую сессию с тем же составом и суммой переиспользуем, протухшие гасим
  * и возвращаем товары в продажу, уже оплаченную — блокируем, чтобы человек
  * не заплатил дважды за вещь, существующую в одном экземпляре.
+ *
+ * Вызывается строго под мьютексом из `@/lib/checkout-lock`. Пока лок держится,
+ * параллельного createCheckoutSession для этого пользователя не существует —
+ * поэтому найденный здесь PENDING-заказ без stripeSessionId гарантированно
+ * брошен (процесс упал или лок протух), а не «в полёте». Раньше это
+ * различал десятисекундный таймаут по createdAt: если Stripe отвечал дольше,
+ * параллельный запрос отменял ещё живой заказ.
  */
 async function collectPendingOrders({
     userId,
@@ -385,7 +425,6 @@ async function collectPendingOrders({
             stripeSessionId: true,
             expiresAt: true,
             totalAmount: true,
-            createdAt: true,
             items: { select: { productId: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -403,7 +442,9 @@ async function collectPendingOrders({
             }
             try {
                 const session = await stripe.checkout.sessions.retrieve(
-                    po.stripeSessionId
+                    po.stripeSessionId,
+                    undefined,
+                    { timeout: 15000 }
                 );
                 return { po, session, retrieveFailed: false };
             } catch {
@@ -420,7 +461,7 @@ async function collectPendingOrders({
     // Сначала — стоп-проверки по всем заказам сразу. Раньше они срабатывали
     // по ходу цикла, и заказ, встреченный до уже оплаченного, успевал получить
     // ненужный expire перед тем, как выполнение прерывалось.
-    for (const { po, session } of states) {
+    for (const { session } of states) {
         if (session?.status === 'complete') {
             return {
                 blocked: {
@@ -428,21 +469,6 @@ async function collectPendingOrders({
                     code: 'PROCESSING_ERROR',
                     message:
                         'Ваш заказ уже оплачен и обрабатывается. Корзина скоро обновится.',
-                },
-            };
-        }
-
-        // Заказ в полёте: Stripe-сессия ещё создаётся параллельным запросом.
-        if (
-            !po.stripeSessionId &&
-            now.getTime() - po.createdAt.getTime() < IN_FLIGHT_WINDOW_MS
-        ) {
-            return {
-                blocked: {
-                    ok: false,
-                    code: 'PROCESSING_ERROR',
-                    message:
-                        'Ваш заказ формируется. Пожалуйста, подождите пару секунд.',
                 },
             };
         }

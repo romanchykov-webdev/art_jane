@@ -139,6 +139,24 @@ model OrderItem {
   @@index([productId])
 }
 
+// Сериализует ПОЛНЫЙ путь createCheckoutSession (включая round-trip к Stripe)
+// для одного пользователя. Именно таблица, а не pg_advisory_lock: DATABASE_URL
+// работает через PgBouncer в transaction pooling, где сессионный advisory-лок
+// не переживает смену физического соединения между двумя запросами, а
+// xact-версия жила бы только внутри одной транзакции — тогда как защищать надо
+// в том числе вызов Stripe, который длится десятки секунд.
+model CheckoutLock {
+  userId    String   @id
+
+  // Владелец лока. Без сверки token при DELETE процесс, чей лок протух по TTL
+  // и был перехвачен следующим запросом, снял бы чужой АКТИВНЫЙ лок.
+  token     String
+
+  expiresAt DateTime
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 model Category {
   id          String    @id @default(uuid())
   name        String    @unique 
@@ -236,6 +254,9 @@ model User {
   
   //История заказов пользователя
   orders        Order[]
+
+  //Мьютекс оформления заказа (см. model CheckoutLock)
+  checkoutLock  CheckoutLock?
 
   @@map("user")
 }
