@@ -22,7 +22,9 @@
         "check": "npm run type-check && npm run lint && npm run format:check && npm run prisma:validate",
         "check:fix": "npm run type-check && npm run lint:fix && npm run format && npm run prisma:format",
         "postinstall": "prisma generate",
-        "test": "vitest"
+        "test": "vitest",
+        "test:run": "vitest run",
+        "test:e2e": "playwright test"
     },
     "dependencies": {
         "@base-ui/react": "^1.3.0",
@@ -58,6 +60,7 @@
         "zustand": "^5.0.12"
     },
     "devDependencies": {
+        "@playwright/test": "^1.63.0",
         "@tailwindcss/postcss": "^4",
         "@testing-library/dom": "^10.4.1",
         "@testing-library/react": "^16.3.2",
@@ -75,6 +78,7 @@
         "tailwindcss": "^4",
         "tsx": "^4.21.0",
         "typescript": "^5",
+        "vite-tsconfig-paths": "^6.1.1",
         "vitest": "^4.1.2"
     }
 }

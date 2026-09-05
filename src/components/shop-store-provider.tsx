@@ -5,7 +5,13 @@ import {
     type ShopStoreApi,
     createShopStore,
 } from '@/store/use-shop-store';
-import { type ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import {
+    type ReactNode,
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+} from 'react';
 import { useStore } from 'zustand';
 const ShopStoreContext = createContext<ShopStoreApi | undefined>(undefined);
 interface ShopStoreProviderProps {

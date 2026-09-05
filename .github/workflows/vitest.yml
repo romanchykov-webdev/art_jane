@@ -1,0 +1,39 @@
+name: Checks & Unit Tests
+
+on:
+    push:
+        branches: [main, master]
+    pull_request:
+
+jobs:
+    unit:
+        name: type-check, lint, unit tests
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+
+        env:
+            # prisma.config.ts читает DIRECT_URL на старте, даже когда команда
+            # к базе не обращается (как `prisma validate`). Заглушки хватает:
+            # соединение здесь не открывается.
+            DIRECT_URL: postgresql://user:pass@localhost:5432/placeholder
+            DATABASE_URL: postgresql://user:pass@localhost:5432/placeholder
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: lts/*
+                  cache: npm
+
+            # postinstall выполнит `prisma generate` — клиент нужен для
+            # type-check, база для этого не требуется.
+            - name: Install dependencies
+              run: npm ci
+
+            # type-check + lint + format:check + prisma validate одной командой
+            - name: Run checks
+              run: npm run check
+
+            - name: Run unit tests
+              run: npm run test:run
