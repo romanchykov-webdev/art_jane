@@ -34,9 +34,6 @@ export default async function RootLayout({
             <body
                 className={`${inter.variable} ${janeFont.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col`}
             >
-                {/* ДОБАВЛЕНО: Невидимый клиентский мост заливает данные в Zustand */}
-                {/* <StoreInitializer cart={cart} favorites={favorites} /> */}
-
                 <ShopStoreProvider initialState={{ cart, favorites }}>
                     {/* ДОБАВЛЕНО: Глобальный слушатель слияния */}
                     <GuestSyncBridge />

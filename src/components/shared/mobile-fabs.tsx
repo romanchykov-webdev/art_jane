@@ -8,7 +8,11 @@ import { useShopStore } from '@/components/shop-store-provider';
 import { useHasMounted } from '@/hooks/use-has-mounted';
 import { CountBadge } from './count-badge';
 
+import { usePathname } from 'next/navigation';
+
 export function MobileFabs() {
+    const pathname = usePathname();
+
     const cart = useShopStore(state => state.cart);
     const favorites = useShopStore(state => state.favorites);
 
@@ -18,6 +22,11 @@ export function MobileFabs() {
 
     // Защита от Hydration Error
     const isMounted = useHasMounted();
+
+    // Скрываем на /checkout и всех вложенных (например /checkout/success)
+    const isCheckout =
+        pathname === '/checkout' || pathname.startsWith('/checkout/');
+    if (isCheckout) return null;
 
     if (!isMounted || (cartCount === 0 && favCount === 0)) return null;
 

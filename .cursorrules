@@ -1,8 +1,8 @@
-# Gemma Pizza Project - Cursor Rules
+# Cursor Rules
 
 ## 🎯 Stack & Technologies
 
-- **Framework:** Next.js 15 (App Router)
+- **Framework:** Next.js 16 (App Router)
 - **ORM:** Prisma
 - **Database:** Supabase PostgreSQL
 - **Language:** TypeScript
@@ -10,6 +10,23 @@
 - **Styling:** TailwindCSS
 - **Auth:** NextAuth.js
 - **Payment:** Stripe
+
+---
+
+## 🛡️ Core Coding Rules & Safety
+
+### 1. React & State Safety
+
+- **Race Conditions:** Все клиентские запросы (fetch/axios) обязаны использовать `AbortController` для отмены предыдущих запросов.
+- **Stale Closures:** В React-хуках и Zustand, требующих обновления состояния, всегда используй функциональный апдейт: `set(prev => ...)` вместо прямого присвоения.
+- **Declarative JSX:** Асинхронная логика и тяжелые вычисления должны быть вынесены из JSX. JSX только описывает UI.
+- **TypeScript Safety:** Категорически запрещено использование `any`. Используй интерфейсы, дженерики или `unknown` с последующей проверкой (type narrowing).
+
+### 2. Error Handling
+
+- Никогда не возвращай сырые объекты из Axios/API в UI.
+- Всегда обрабатывай ошибки (try/catch) и возвращай типизированный результат или понятное сообщение.
+- Логируй ошибки на сервере, но скрывай детали реализации от клиента.
 
 ---
 
@@ -62,19 +79,19 @@ generator client {
 ```typescript
 // ❌ BAD - loads all fields
 const product = await prisma.product.findFirst({
-  include: { ingredients: true },
+    include: { ingredients: true },
 });
 
 // ✅ GOOD - loads only needed fields
 const product = await prisma.product.findFirst({
-  select: {
-    id: true,
-    name: true,
-    imageUrl: true,
-    ingredients: {
-      select: { id: true, name: true, price: true },
+    select: {
+        id: true,
+        name: true,
+        imageUrl: true,
+        ingredients: {
+            select: { id: true, name: true, price: true },
+        },
     },
-  },
 });
 ```
 
@@ -93,17 +110,19 @@ export const findPizzas = cache(async (params) => {
 ```typescript
 // ❌ BAD - N+1 problem
 for (const item of items) {
-  const product = await prisma.product.findUnique({ where: { id: item.productId } });
+    const product = await prisma.product.findUnique({
+        where: { id: item.productId },
+    });
 }
 
 // ✅ GOOD - single query with include/select
 const items = await prisma.cartItem.findMany({
-  select: {
-    id: true,
-    productItem: {
-      select: { product: { select: { name: true } } },
+    select: {
+        id: true,
+        productItem: {
+            select: { product: { select: { name: true } } },
+        },
     },
-  },
 });
 ```
 
@@ -182,7 +201,7 @@ export default async function Home() {
 ```typescript
 // For complex aggregations, raw SQL is faster than Prisma
 const result = await prisma.$queryRawUnsafe<any[]>(
-  `
+    `
   SELECT 
     c.id, c."totalAmount",
     json_agg(ci.*) as items
@@ -191,7 +210,7 @@ const result = await prisma.$queryRawUnsafe<any[]>(
   WHERE c."tokenId" = $1
   GROUP BY c.id
 `,
-  token,
+    token
 );
 ```
 
@@ -213,14 +232,14 @@ await prisma.$transaction(async (tx) => {
 ```typescript
 // ❌ BAD
 const user = await prisma.user.findUnique({
-  where: { id },
+    where: { id },
 });
 return user; // exposes password hash!
 
 // ✅ GOOD
 const user = await prisma.user.findUnique({
-  where: { id },
-  select: { id: true, email: true, fullName: true },
+    where: { id },
+    select: { id: true, email: true, fullName: true },
 });
 ```
 
@@ -230,7 +249,7 @@ const user = await prisma.user.findUnique({
 // Always validate and sanitize
 const productId = Number(params.id);
 if (!productId || productId < 0) {
-  return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 }
 ```
 
@@ -268,12 +287,12 @@ if (!productId || productId < 0) {
 
 ```typescript
 export async function GET(req: NextRequest) {
-  try {
-    // your code
-  } catch (error) {
-    console.error('[API_NAME] Error:', error);
-    return NextResponse.json({ message: 'Error message' }, { status: 500 });
-  }
+    try {
+        // your code
+    } catch (error) {
+        console.error('[API_NAME] Error:', error);
+        return NextResponse.json({ message: 'Error message' }, { status: 500 });
+    }
 }
 ```
 
@@ -283,13 +302,13 @@ export async function GET(req: NextRequest) {
 'use server';
 
 export async function createOrder(data: FormData) {
-  try {
-    // your code
-    return { success: true };
-  } catch (error) {
-    console.error('[CREATE_ORDER] Error:', error);
-    return { success: false, error: error.message };
-  }
+    try {
+        // your code
+        return { success: true };
+    } catch (error) {
+        console.error('[CREATE_ORDER] Error:', error);
+        return { success: false, error: error.message };
+    }
 }
 ```
 
@@ -377,10 +396,10 @@ STRIPE_SECRET_KEY=
 ```json
 // package.json
 {
-  "scripts": {
-    "build": "prisma generate && next build",
-    "postinstall": "prisma generate"
-  }
+    "scripts": {
+        "build": "prisma generate && next build",
+        "postinstall": "prisma generate"
+    }
 }
 ```
 
@@ -442,11 +461,14 @@ _Project: Gemma Pizza - Next.js 15 + Supabase + Prisma_
     - **Заголовок**: краткое описание изменений (до 50 символов) в повелительном наклонении (например, "Добавь", "Исправь", а не "Добавил").
     - **Пустая строка**
     - **Подробное описание**:
-      - Объясни _почему_ сделаны изменения.
-      - Перечисли конкретные изменения в файлах.
-      - Используй маркированные списки (- ) для деталей.
-      - Упомяни, какие файлы были затронуты, если это важно.
+        - Объясни _почему_ сделаны изменения.
+        - Перечисли конкретные изменения в файлах.
+        - Используй маркированные списки (- ) для деталей.
+        - Упомяни, какие файлы были затронуты, если это важно.
 
 ## Пример
 
 feat: добавь авторизацию через Google
+
+
+- **Language Constraint:** Всегда отвечай и проводи аудит СТРОГО на русском языке.

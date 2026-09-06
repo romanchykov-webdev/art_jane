@@ -5,7 +5,13 @@ import {
     type ShopStoreApi,
     createShopStore,
 } from '@/store/use-shop-store';
-import { type ReactNode, createContext, useContext, useState } from 'react';
+import {
+    type ReactNode,
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+} from 'react';
 import { useStore } from 'zustand';
 const ShopStoreContext = createContext<ShopStoreApi | undefined>(undefined);
 interface ShopStoreProviderProps {
@@ -18,6 +24,13 @@ export function ShopStoreProvider({
 }: ShopStoreProviderProps) {
     // Ленивый инициализатор: стор создаётся один раз, значение можно читать в рендере.
     const [store] = useState(() => createShopStore(initialState));
+
+    // Ресинкируем стор при каждом изменении initialState (навигация, revalidatePath).
+    // initStore идемпотентен — при совпадении id не создаёт лишних ре-рендеров.
+    useEffect(() => {
+        store.getState().initStore(initialState.cart, initialState.favorites);
+    }, [initialState, store]);
+
     return (
         <ShopStoreContext.Provider value={store}>
             {children}

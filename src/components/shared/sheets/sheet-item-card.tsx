@@ -1,8 +1,9 @@
 import { formatPrice } from '@/lib/utils';
 import { StoreProduct } from '@/types/product';
-import { Heart, X } from 'lucide-react';
+import { Heart, Loader2, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 
 interface SheetItemCardProps {
     item: StoreProduct;
@@ -19,6 +20,8 @@ export function SheetItemCard({
     type,
 }: SheetItemCardProps) {
     const Icon = type === 'favorite' ? Heart : X;
+
+    const [isImageLoading, setIsImageLoading] = useState(true);
     return (
         <div className="flex gap-4 group border border-gray-400 rounded-2xl p-2 shadow-even-sm hover:shadow-even-md transition-all duration-300">
             {/* КАРТИНКА  */}
@@ -30,12 +33,23 @@ export function SheetItemCard({
                 aria-hidden="true"
                 className="relative w-24 h-32 rounded-xl overflow-hidden bg-white/5 shrink-0 border border-white/10 block"
             >
+                {/* Лоадер */}
+                {isImageLoading && (
+                    <Loader2 className="w-5 h-5 animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/50 z-0" />
+                )}
+
+                {/* Изображение*/}
                 <Image
                     src={item.thumbnailFront}
                     alt={item.title}
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="96px"
+                    onLoad={() => setIsImageLoading(false)}
+                    className={`object-cover transition-all duration-500 z-10 ${
+                        isImageLoading
+                            ? 'opacity-0 scale-95'
+                            : 'opacity-100 group-hover:scale-105'
+                    }`}
                 />
             </Link>
 

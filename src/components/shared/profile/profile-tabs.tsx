@@ -10,7 +10,9 @@ import { TabTriggerItem } from '@/components/shared/profile/tab-trigger-item';
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 
 import { useShopStore } from '@/components/shop-store-provider';
-type ProfileOrder = Prisma.OrderGetPayload<{ include: { items: true } }>;
+type ProfileOrder = Prisma.OrderGetPayload<{
+    include: { items: { include: { product: true } } };
+}>;
 interface ProfileTabsProps {
     orders: ProfileOrder[];
 }

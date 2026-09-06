@@ -12,14 +12,19 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
+    DialogTrigger,
 } from '@/components/ui/dialog';
 
 import { signIn, useSession } from '@/lib/auth-client';
+import Image from 'next/image';
 import { GlassTabs } from '../glass-tabs';
 import { LoginForm } from './login-form';
 import { RegisterForm } from './register-form';
+interface AuthDialogProps {
+    children?: React.ReactNode;
+}
 
-export function AuthDialog() {
+export function AuthDialog({ children }: AuthDialogProps) {
     const { data: session, isPending } = useSession();
 
     const [isOpen, setIsOpen] = useState(false);
@@ -68,24 +73,46 @@ export function AuthDialog() {
         return (
             <Link
                 href="/profile"
-                // target="_blank"
                 className="relative text-amber-500 hover:text-amber-500/80 transition-colors duration-300 outline-none block"
             >
-                <User strokeWidth={1.5} className="w-5 h-5" />
+                {session.user.image ? (
+                    <Image
+                        src={session.user.image}
+                        alt={session.user.name ?? 'User avatar'}
+                        width={28}
+                        height={28}
+                        className="w-7 h-7 rounded-full object-cover ring-1 ring-amber-500/50"
+                    />
+                ) : (
+                    <User strokeWidth={1.5} className="w-5 h-5" />
+                )}
             </Link>
         );
     }
 
     return (
         <>
-            <button
-                onClick={() => setIsOpen(true)}
-                className="relative text-muted-foreground hover:text-amber-500 transition-colors duration-300 outline-none cursor-pointer"
-            >
-                <User strokeWidth={1.5} className="w-5 h-5" />
-            </button>
+            {/* {children ? (
+                children
+            ) : (
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className="relative text-muted-foreground hover:text-amber-500 transition-colors duration-300 outline-none cursor-pointer"
+                >
+                    <User strokeWidth={1.5} className="w-5 h-5" />
+                </button>
+            )} */}
 
             <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+                <DialogTrigger asChild>
+                    {children ? (
+                        children
+                    ) : (
+                        <button className="relative text-muted-foreground hover:text-amber-500 transition-colors duration-300 outline-none cursor-pointer">
+                            <User strokeWidth={1.5} className="w-5 h-5" />
+                        </button>
+                    )}
+                </DialogTrigger>
                 <DialogContent className="sm:max-w-[420px] p-1 bg-black/20! backdrop-blur-md border-white/10 shadow-2xl rounded-3xl! text-white">
                     <div className="p-6 bg-black/20 backdrop-blur-md rounded-[20px] border border-white/10 shadow-inner flex flex-col gap-4">
                         <DialogHeader>
@@ -125,7 +152,8 @@ export function AuthDialog() {
                         <Button
                             variant="outline"
                             type="button"
-                            className="w-full bg-white/5 text-white hover:bg-white/10 border border-white/10 rounded-full flex items-center justify-center gap-2 transition-colors"
+                            className="w-full bg-white/5 text-white hover:bg-white border border-white/10 
+                            rounded-full flex items-center justify-center gap-2 transition-colors cursor-pointer"
                             onClick={handleGoogleLogin}
                             disabled={isGoogleLoading}
                         >

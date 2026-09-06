@@ -60,6 +60,8 @@ export default async function Home() {
         (settings?.heroSequenceFolder as StorageFolder) ?? 'sequence';
     const sequenceFrameCount = settings?.heroSequenceFrameCount ?? 174;
 
+    // TODO на странице товара у купленого товара вместо добавить в корзину должно быть SOLD OUT
+
     return (
         <>
             {/* Клиентский Canvas*/}

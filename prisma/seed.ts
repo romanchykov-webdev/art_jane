@@ -1,10 +1,6 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import 'dotenv/config';
-import {
-    OrderStatus,
-    PrismaClient,
-    ProductStatus,
-} from '../src/generated/prisma';
+import { PrismaClient, ProductStatus } from '../src/generated/prisma';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -20,15 +16,15 @@ async function main() {
     await prisma.user.deleteMany();
 
     // ДОБАВЛЕНО: Создание тестового юзера
-    console.log('Creating test user... 👤');
-    const testUser = await prisma.user.create({
-        data: {
-            name: 'Serioga Romanchykov',
+    // console.log('Creating test user... 👤');
+    // const testUser = await prisma.user.create({
+    //     data: {
+    //         name: 'Serioga Romanchykov',
 
-            email: 'serioga.genova@gmail.com',
-            emailVerified: true,
-        },
-    });
+    //         email: 'serioga.genova@gmail.com',
+    //         emailVerified: true,
+    //     },
+    // });
 
     console.log('Seeding Categories... 🗂️');
 
@@ -70,7 +66,7 @@ async function main() {
             ],
             size: 'M (Unisex)',
             materials: '100% Хлопок, Акрил по текстилю',
-            sequenceFolder: 'woman-longsleeve',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['sweaters'],
         },
@@ -92,7 +88,7 @@ async function main() {
             ],
             size: 'M (Unisex)',
             materials: '100% Хлопок, Акрил по текстилю',
-            sequenceFolder: 'woman-longsleeve',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['sweaters'],
         },
@@ -114,7 +110,7 @@ async function main() {
             ],
             size: 'M (Unisex)',
             materials: '100% Хлопок, Акрил по текстилю',
-            sequenceFolder: 'woman-longsleeve',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['sweaters'],
         },
@@ -136,7 +132,7 @@ async function main() {
             ],
             size: 'M (Unisex)',
             materials: '100% Хлопок, Акрил по текстилю',
-            sequenceFolder: 'woman-longsleeve',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['sweaters'],
         },
@@ -158,7 +154,7 @@ async function main() {
             ],
             size: 'M (Unisex)',
             materials: '100% Хлопок, Акрил по текстилю',
-            sequenceFolder: 'woman-longsleeve',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['sweaters'],
         },
@@ -180,7 +176,7 @@ async function main() {
             ],
             size: 'M (Unisex)',
             materials: '100% Хлопок, Акрил по текстилю',
-            sequenceFolder: 'woman-longsleeve',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['sweaters'],
         },
@@ -202,7 +198,7 @@ async function main() {
             ],
             size: 'M (Unisex)',
             materials: '100% Хлопок, Акрил по текстилю',
-            sequenceFolder: 'woman-longsleeve',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['sweaters'],
         },
@@ -225,7 +221,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['t-shirts'],
         },
@@ -247,7 +243,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['t-shirts'],
         },
@@ -269,7 +265,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['t-shirts'],
         },
@@ -291,7 +287,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['t-shirts'],
         },
@@ -313,7 +309,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['t-shirts'],
         },
@@ -335,7 +331,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['t-shirts'],
         },
@@ -359,7 +355,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -382,7 +378,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -405,7 +401,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -428,7 +424,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -451,7 +447,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -474,7 +470,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -497,7 +493,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -520,7 +516,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -543,7 +539,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -566,7 +562,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -589,7 +585,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -612,7 +608,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -635,7 +631,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -658,7 +654,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['bags'],
         },
@@ -681,7 +677,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['pants'],
         },
@@ -703,7 +699,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['pants'],
         },
@@ -725,7 +721,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['pants'],
         },
@@ -747,7 +743,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['pants'],
         },
@@ -769,7 +765,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['pants'],
         },
@@ -791,7 +787,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['pants'],
         },
@@ -814,7 +810,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['jackets'],
         },
@@ -836,7 +832,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['jackets'],
         },
@@ -858,7 +854,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['jackets'],
         },
@@ -880,7 +876,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['jackets'],
         },
@@ -902,7 +898,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['jackets'],
         },
@@ -925,7 +921,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['suits'],
         },
@@ -947,7 +943,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['suits'],
         },
@@ -969,7 +965,7 @@ async function main() {
             ],
             size: 'L (Oversize)',
             materials: 'Варёный хлопок, Текстильные маркеры',
-            sequenceFolder: 'cat-tshirt',
+            sequenceFolder: 'sequence',
             sequenceFrameCount: 174,
             categoryId: createdCategories['suits'],
         },
@@ -977,15 +973,25 @@ async function main() {
 
     const createdProducts = [];
     for (let i = 0; i < products.length; i++) {
+        //
         const baseSlug = products[i].slug.replace(/-\d+$/, '');
+        const currentProduct = products[i];
+        //
         const created = await prisma.product.create({
             data: {
-                ...products[i],
+                // ...products[i],
+                // slug: `${baseSlug}-${String(i + 1).padStart(2, '0')}`,
+                ...currentProduct,
+                // ДОБАВЛЕНО: Уникальный номер в названии товара
+                title: `${currentProduct.title} ${i + 1}`,
+                // Генерация уникального слага
                 slug: `${baseSlug}-${String(i + 1).padStart(2, '0')}`,
             },
         });
+        //
         createdProducts.push(created);
     }
+    //
     console.log('Database seeded with Products! 🚀');
 
     // ==========================================
@@ -997,45 +1003,45 @@ async function main() {
         );
 
         // 1. Товар в Избранное
-        await prisma.favorite.create({
-            data: { userId: testUser.id, productId: createdProducts[0].id },
-        });
+        // await prisma.favorite.create({
+        //     data: { userId: testUser.id, productId: createdProducts[0].id },
+        // });
 
-        // 2. Товар в Корзину
-        await prisma.cartItem.create({
-            data: { userId: testUser.id, productId: createdProducts[1].id },
-        });
+        // // 2. Товар в Корзину
+        // await prisma.cartItem.create({
+        //     data: { userId: testUser.id, productId: createdProducts[1].id },
+        // });
 
         // 3. Успешный заказ (PAID) и смена статуса товара на SOLD
-        await prisma.product.update({
-            where: { id: createdProducts[2].id },
-            data: { status: ProductStatus.SOLD },
-        });
-        await prisma.order.create({
-            data: {
-                userId: testUser.id,
-                customerEmail: testUser.email,
-                customerName: testUser.name,
-                status: OrderStatus.PAID,
-                items: { connect: [{ id: createdProducts[2].id }] },
-            },
-        });
+        // await prisma.product.update({
+        //     where: { id: createdProducts[2].id },
+        //     data: { status: ProductStatus.SOLD },
+        // });
+        // await prisma.order.create({
+        //     data: {
+        //         userId: testUser.id,
+        //         customerEmail: testUser.email,
+        //         customerName: testUser.name,
+        //         status: OrderStatus.PAID,
+        //         items: { connect: [{ id: createdProducts[2].id }] },
+        //     },
+        // });
 
         // 4. Заказ в ожидании (PENDING - Checkout Lock) и смена статуса на RESERVED
-        await prisma.product.update({
-            where: { id: createdProducts[3].id },
-            data: { status: ProductStatus.RESERVED },
-        });
-        await prisma.order.create({
-            data: {
-                userId: testUser.id,
-                customerEmail: testUser.email,
-                customerName: testUser.name,
-                status: OrderStatus.PENDING,
-                expiresAt: new Date(Date.now() + 15 * 60 * 1000), // + 15 минут
-                items: { connect: [{ id: createdProducts[3].id }] },
-            },
-        });
+        // await prisma.product.update({
+        //     where: { id: createdProducts[3].id },
+        //     data: { status: ProductStatus.RESERVED },
+        // });
+        // await prisma.order.create({
+        //     data: {
+        //         userId: testUser.id,
+        //         customerEmail: testUser.email,
+        //         customerName: testUser.name,
+        //         status: OrderStatus.PENDING,
+        //         expiresAt: new Date(Date.now() + 15 * 60 * 1000), // + 15 минут
+        //         items: { connect: [{ id: createdProducts[3].id }] },
+        //     },
+        // });
     }
 
     console.log('Seeding Site Settings...');

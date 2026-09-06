@@ -14,6 +14,7 @@ export const ProductStatusBadge: React.FC<Props> = ({
     classBage,
     status,
 }): JSX.Element => {
+    // console.log('ProductStatusBadge - Status', { status });
     return (
         <>
             {!isAvailable && (

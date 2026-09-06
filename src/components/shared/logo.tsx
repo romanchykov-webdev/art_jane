@@ -28,7 +28,7 @@ export function Logo({
         >
             <span
                 className={cn(
-                    'font-black tracking-widest uppercase text-shadow-lg/30 font-jane text-center',
+                    'font-black tracking-widest uppercase text-shadow-lg/30 font-jane text-center ',
                     textSizes[size]
                 )}
             >
