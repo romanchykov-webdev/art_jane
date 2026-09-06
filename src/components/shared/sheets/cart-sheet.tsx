@@ -9,11 +9,13 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import { useSession } from '@/lib/auth-client';
 import { formatPrice } from '@/lib/utils';
 import { ShoppingBag, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
+import { AuthDialog } from '../auth/auth-dialog';
+import { CheckoutButton } from './checkout-button';
 import { SheetItemCard } from './sheet-item-card';
-
 interface CartSheetProps {
     children: React.ReactNode;
     cartCount: number;
@@ -24,6 +26,10 @@ export function CartSheet({ children, cartCount }: CartSheetProps) {
     const removeFromCart = useShopStore(state => state.removeFromCart);
 
     const totalPrice = cart.reduce((total, item) => total + item.price, 0);
+
+    // 🔑 Определяем статус пользователя
+    const { data: session } = useSession();
+    const isAuthenticated = !!session?.user;
 
     return (
         <Sheet>
@@ -76,20 +82,18 @@ export function CartSheet({ children, cartCount }: CartSheetProps) {
                             <span className="text-white/80">TOTAL</span>
                             <span>{formatPrice(totalPrice)}</span>
                         </div>
-                        <Link
-                            href="/checkout"
-                            className="block w-full"
-                            onClick={e => {
-                                if (cart.length === 0) e.preventDefault();
-                            }}
-                        >
-                            <Button
-                                disabled={cart.length === 0}
-                                className="w-full bg-white text-black hover:bg-white/90 rounded-full font-jane transition-all h-14 text-xl tracking-wider"
-                            >
-                                CHECKOUT
-                            </Button>
-                        </Link>
+
+                        {isAuthenticated ? (
+                            <Link href="/checkout" className="block w-full">
+                                <CheckoutButton />
+                            </Link>
+                        ) : (
+                            <AuthDialog>
+                                <Button className="w-full bg-white text-black hover:bg-white/90 rounded-full font-jane transition-all h-14 text-xl tracking-wider">
+                                    SIGN IN TO CHECKOUT
+                                </Button>
+                            </AuthDialog>
+                        )}
                     </div>
                 )}
             </SheetContent>

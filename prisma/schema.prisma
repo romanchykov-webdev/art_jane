@@ -35,6 +35,10 @@ model Product {
   
   status             ProductStatus @default(AVAILABLE)
 
+  // время, до которого действует бронь.
+  // NULL = товар не забронирован (AVAILABLE или SOLD).
+  reservedUntil      DateTime?
+
   thumbnailFront     String
   thumbnailBack      String
   gallery            String[]
@@ -50,8 +54,10 @@ model Product {
   categoryId         String
   category           Category      @relation(fields: [categoryId], references: [id])
   
-  orderId            String?
-  order              Order?        @relation(fields: [orderId], references: [id])
+  // orderId            String?
+  // order              Order?        @relation(fields: [orderId], references: [id])
+  // для истории заказа
+  orderItems         OrderItem[]
 
   // СВЯЗИ ДЛЯ КОРЗИНЫ И ИЗБРАННОГО
   favorites          Favorite[]
@@ -63,6 +69,10 @@ model Product {
   @@index([categoryId])
   @@index([status])
   @@index([slug])
+
+  // композитный индекс под воркер автоматического снятия брони.
+  // Запрос вида: WHERE status = 'RESERVED' AND reservedUntil < now()
+  @@index([status, reservedUntil])
 }
 
 model Order {
@@ -72,15 +82,29 @@ model Order {
   // Данные для гостя
   customerEmail    String?
   customerName     String?
-  customerAddress  Json?       
+  customerPhone    String?     
+
+  // Данные для доставки
+  shippingCountry    String?
+  shippingCity       String?
+  shippingPostalCode String? // Почтовый индекс
+  shippingStreet     String? // Улица, номер дома, квартира
+  shippingState      String? // Область, регион
   
+  // Гость по куке — для консистентности с Favorite/CartItem
+  guestId          String?     // чтобы привязать заказ к гостевой сессии
+  // Снимок суммы на момент заказа (цена товара может измениться)
+  totalAmount      Int         @default(0)  // в минорных единицах (центы)
+
   // Связь с авторизованным пользователем
   userId           String?
   user             User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   stripeSessionId  String?     @unique
   
-  items            Product[]
+  // items            Product[]
+  // СТАЛО: Заказ теперь ссылается на строки чека, а не напрямую на товары
+  items            OrderItem[]
 
   expiresAt        DateTime?   
 
@@ -89,6 +113,48 @@ model Order {
 
   @@index([stripeSessionId])
   @@index([userId]) //Индекс для быстрого поиска заказов юзера
+  @@index([guestId])          // + NEW
+  @@index([status, expiresAt]) // + NEW: для крона, чистящего протухшие PENDING-заказы
+}
+
+// история заказов 
+model OrderItem {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 1. Связь с заказом (Если удалят заказ, удалятся и его строки)
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // 2. Связь с товаром (Навсегда сохраняет факт участия товара в чеке)
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+
+  // 3. Финансовый и визуальный "Снимок" на момент нажатия кнопки Оплатить
+  priceAtOrder Int
+  titleAtOrder String
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// Сериализует ПОЛНЫЙ путь createCheckoutSession (включая round-trip к Stripe)
+// для одного пользователя. Именно таблица, а не pg_advisory_lock: DATABASE_URL
+// работает через PgBouncer в transaction pooling, где сессионный advisory-лок
+// не переживает смену физического соединения между двумя запросами, а
+// xact-версия жила бы только внутри одной транзакции — тогда как защищать надо
+// в том числе вызов Stripe, который длится десятки секунд.
+model CheckoutLock {
+  userId    String   @id
+
+  // Владелец лока. Без сверки token при DELETE процесс, чей лок протух по TTL
+  // и был перехвачен следующим запросом, снял бы чужой АКТИВНЫЙ лок.
+  token     String
+
+  expiresAt DateTime
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Category {
@@ -173,7 +239,14 @@ model User {
   accounts      Account[]
 
   phone         String?   
-  address       Json?     // Json  для хранения { city: "", street: "", zip: "" }
+  // Данные для доставки
+  firstName     String?   
+  lastName      String?
+  country       String?
+  city          String?
+  postalCode    String?
+  street        String?
+  state         String?
   
   //Связи с e-commerce таблицами
   favorites     Favorite[]
@@ -181,6 +254,9 @@ model User {
   
   //История заказов пользователя
   orders        Order[]
+
+  //Мьютекс оформления заказа (см. model CheckoutLock)
+  checkoutLock  CheckoutLock?
 
   @@map("user")
 }

@@ -6,10 +6,8 @@ import { cn } from '@/lib/utils';
 import { StoreProduct } from '@/types/product';
 import React from 'react';
 
-interface AddToCartButtonProps extends Omit<
-    React.ComponentProps<typeof Button>,
-    'onClick' | 'children'
-> {
+interface AddToCartButtonProps
+    extends Omit<React.ComponentProps<typeof Button>, 'onClick' | 'children'> {
     product: StoreProduct;
     isInsideLink?: boolean | undefined;
     onToggleCart?: ((next: { isInCart: boolean }) => void) | undefined;

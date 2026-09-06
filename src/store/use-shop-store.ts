@@ -1,4 +1,8 @@
-import { toggleCartAction, toggleFavoriteAction } from '@/actions/shop-actions';
+import {
+    removeCartItemsAction,
+    toggleCartAction,
+    toggleFavoriteAction,
+} from '@/actions/shop-actions';
 import { StoreProduct } from '@/types/product';
 import { toast } from 'sonner';
 import { createStore } from 'zustand/vanilla';
@@ -14,6 +18,7 @@ export interface ShopState {
 export interface ShopActions {
     toggleCart: (product: StoreProduct) => Promise<void>;
     removeFromCart: (productId: string) => Promise<void>;
+    removeManyFromCart: (productIds: string[]) => Promise<void>;
     toggleFavorite: (product: StoreProduct) => Promise<void>;
     removeFromFavorites: (productId: string) => Promise<void>;
     clearCart: () => void;
@@ -73,6 +78,39 @@ export const createShopStore = (initState: ShopState = defaultShopState) => {
                 console.error('[REMOVE_CART_ERROR]', error);
                 if (itemToRestore)
                     set(state => ({ cart: [...state.cart, itemToRestore] }));
+                toast.error('Ошибка удаления из корзины');
+                throw error;
+            }
+        },
+
+        /**
+         * Удаление нескольких позиций одним запросом.
+         *
+         * Поштучный вызов removeFromCart тянет за собой по одному
+         * revalidatePath('/', 'layout') на товар — на чекауте это заметно
+         * дёргает страницу, когда разом убирают несколько проданных вещей.
+         */
+        removeManyFromCart: async productIds => {
+            if (productIds.length === 0) return;
+
+            const idsToRemove = new Set(productIds);
+            const itemsToRestore = get().cart.filter(item =>
+                idsToRemove.has(item.id)
+            );
+
+            if (itemsToRestore.length === 0) return;
+
+            set(state => ({
+                cart: state.cart.filter(item => !idsToRemove.has(item.id)),
+            }));
+
+            try {
+                const res = await removeCartItemsAction(productIds);
+                if (!res?.success)
+                    throw new Error(res?.error || 'Failed to sync with server');
+            } catch (error) {
+                console.error('[REMOVE_MANY_CART_ERROR]', error);
+                set(state => ({ cart: [...state.cart, ...itemsToRestore] }));
                 toast.error('Ошибка удаления из корзины');
                 throw error;
             }
