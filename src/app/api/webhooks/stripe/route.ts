@@ -8,10 +8,26 @@ export const runtime = 'nodejs';
 // Отключаем кэширование — вебхук всегда динамический
 export const dynamic = 'force-dynamic';
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-
 export async function POST(req: Request) {
-    // 1. КРИТИЧНО: читаем СЫРОЕ тело (text), а не json.
+    // 1. Без секрета проверить подпись нечем. Раньше он читался на уровне
+    //    модуля через non-null assertion, и его отсутствие всплывало уже
+    //    внутри `constructEventAsync` — в логах это выглядело ровно так же,
+    //    как настоящая подделка подписи, хотя причина совсем другая.
+    //    Отвечаем 500, а не 400: сломана наша конфигурация, и Stripe обязан
+    //    повторить доставку после того, как переменную вернут на место.
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+        console.error(
+            '[STRIPE_WEBHOOK] STRIPE_WEBHOOK_SECRET не задан в окружении'
+        );
+        return NextResponse.json(
+            { error: 'Webhook is not configured' },
+            { status: 500 }
+        );
+    }
+
+    // 2. КРИТИЧНО: читаем СЫРОЕ тело (text), а не json.
     //    Любое изменение байтов сломает проверку подписи.
     const body = await req.text();
     const signature = req.headers.get('stripe-signature');
@@ -23,7 +39,7 @@ export async function POST(req: Request) {
         );
     }
 
-    // 2. Верифицируем подпись Stripe
+    // 3. Верифицируем подпись Stripe
     let event: Stripe.Event;
     try {
         event = await stripe.webhooks.constructEventAsync(
@@ -39,7 +55,7 @@ export async function POST(req: Request) {
         );
     }
 
-    // 3. Обрабатываем нужные события
+    // 4. Обрабатываем нужные события
     try {
         switch (event.type) {
             // Сессия завершена. Для карт деньги уже получены, для методов
@@ -90,7 +106,7 @@ export async function POST(req: Request) {
         );
     }
 
-    // 4. Подтверждаем получение
+    // 5. Подтверждаем получение
     return NextResponse.json({ received: true });
 }
 
