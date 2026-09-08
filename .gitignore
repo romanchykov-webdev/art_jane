@@ -39,6 +39,9 @@ yarn-error.log*
 AGENTS.md
 CLAUDE.md
 
+# claude code — личные настройки, не для общего репозитория
+.claude/settings.local.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -52,3 +55,4 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+/.playwright-mcp/
