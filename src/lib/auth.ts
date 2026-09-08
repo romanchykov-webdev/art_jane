@@ -1,3 +1,4 @@
+import { buildAllowedHosts } from '@/lib/auth-hosts';
 import { prisma } from '@/lib/prisma';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
@@ -10,17 +11,14 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
  * означал бы, что на превью better-auth считает своим адресом продакшен,
  * выводит из него trustedOrigins и отклоняет запросы с превью-домена.
  *
- * Подстановочные шаблоны вроде `*.vercel.app` сознательно не используются:
- * хост берётся из заголовка `x-forwarded-host`, то есть приходит из запроса,
- * и такой шаблон разрешил бы подставить ЛЮБОЙ чужой домен на vercel.app —
- * а вместе с ним и адреса редиректов после авторизации.
+ * Сама сборка живёт в `@/lib/auth-hosts` — там же запрет на подстановочные
+ * шаблоны и тесты на него.
  */
-const allowedHosts = [
-    process.env.VERCEL_PROJECT_PRODUCTION_URL, // постоянный домен прода
-    process.env.VERCEL_URL, // домен конкретного деплоя
-    process.env.VERCEL_BRANCH_URL, // домен ветки, …-git-<branch>-…
-    'localhost:3000', // локальная разработка и смок-тесты Playwright
-].filter((host): host is string => Boolean(host));
+const allowedHosts = buildAllowedHosts({
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    VERCEL_URL: process.env.VERCEL_URL,
+    VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
+});
 
 /**
  * Протокол задан явно, а не оставлен на `auto`.
